@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { router } from 'expo-router';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ActionSheet, type ActionItem } from '@/components/action-sheet';
@@ -27,7 +27,6 @@ export default function HomeScreen() {
     activeNotes,
     notesInFolder,
     createNote,
-    setActiveCalendarDay,
     createFolder,
     renameFolder,
     deleteFolder,
@@ -46,12 +45,6 @@ export default function HomeScreen() {
   const [sheet, setSheet] = useState<{ type: 'note' | 'folder' | 'move'; id: string } | null>(null);
   const [savedFlash, setSavedFlash] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      setActiveCalendarDay(null);
-    }, [setActiveCalendarDay])
-  );
-
   const initials = profile.name
     .split(' ')
     .map((part) => part[0])
@@ -67,7 +60,7 @@ export default function HomeScreen() {
   const searched = useMemo(() => {
     const q = query.trim().toLowerCase();
     return activeNotes.filter((note) => {
-      if (!matchesFilter(note.updatedAt, noteFilter) && !q) return false;
+      if (!matchesFilter(note.datedAt ?? note.updatedAt, noteFilter) && !q) return false;
       if (!q) return true;
       const hay = `${note.title} ${note.body} ${note.tags.join(' ')}`.toLowerCase();
       return hay.includes(q);

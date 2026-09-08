@@ -1,5 +1,5 @@
-import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { EmptyState } from '@/components/empty-state';
@@ -14,15 +14,9 @@ import type { Note } from '@/lib/types';
 type Pane = 'archive' | 'trash';
 
 export default function ArchiveScreen() {
-  const { archivedNotes, trashedNotes, createNote, unarchiveNote, restoreNote, permanentlyDelete, emptyTrash, toggleCheckItem, setActiveCalendarDay } =
+  const { archivedNotes, trashedNotes, createNote, unarchiveNote, restoreNote, permanentlyDelete, emptyTrash, toggleCheckItem } =
     useNotes();
   const [pane, setPane] = useState<Pane>('archive');
-
-  useFocusEffect(
-    useCallback(() => {
-      setActiveCalendarDay(null);
-    }, [setActiveCalendarDay])
-  );
   const { columns, contentPad, noteGap, showSidebar, width } = useResponsive();
   const list: Note[] = pane === 'archive' ? archivedNotes : trashedNotes;
   const innerWidth = Math.min(width - (showSidebar ? Layout.sidebarWidth : 0), Layout.maxContent);

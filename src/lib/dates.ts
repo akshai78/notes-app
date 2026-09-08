@@ -63,7 +63,25 @@ export function formatShortMonth(date: Date): string {
 }
 
 export function sameDay(a: number, b: number): boolean {
-  return startOfDay(new Date(a)) === startOfDay(new Date(b));
+  return toDateKey(a) === toDateKey(b);
+}
+
+export function toDateKey(timestamp: number | Date): string {
+  const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return toDateKey(Date.now());
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+export function fromDateKey(key: string): number {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key);
+  if (!match) return startOfDay();
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  return startOfDay(new Date(year, month - 1, day));
 }
 
 export function noteCalendarDay(note: { datedAt?: number; createdAt: number; updatedAt: number }): number {

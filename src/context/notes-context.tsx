@@ -13,6 +13,7 @@ import { seedState } from '@/constants/seed';
 import { PASTEL_ORDER } from '@/constants/theme';
 import { startOfDay } from '@/lib/dates';
 import { createId } from '@/lib/id';
+import { peekNoteDraft } from '@/lib/note-draft';
 import { loadState, saveState } from '@/lib/storage';
 import type { CheckItem, Folder, Note, NoteColorId, Profile } from '@/lib/types';
 
@@ -122,7 +123,9 @@ export function NotesProvider({ children }: { children: ReactNode }) {
         pinned: false,
         archived: false,
         deletedAt: null,
-        datedAt: startOfDay(new Date(input.datedAt ?? calendarDayRef.current ?? Date.now())),
+        datedAt: startOfDay(
+          new Date(input.datedAt ?? peekNoteDraft()?.datedAt ?? calendarDayRef.current ?? Date.now())
+        ),
         createdAt: input.createdAt ?? Date.now(),
         updatedAt: input.updatedAt ?? Date.now(),
       };

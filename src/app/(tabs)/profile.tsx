@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { PromptModal } from '@/components/prompt-modal';
@@ -20,15 +19,8 @@ export default function ProfileScreen() {
     trashedNotes,
     resetDemo,
     createNote,
-    setActiveCalendarDay,
   } = useNotes();
   const { contentPad } = useResponsive();
-
-  useFocusEffect(
-    useCallback(() => {
-      setActiveCalendarDay(null);
-    }, [setActiveCalendarDay])
-  );
   const [editName, setEditName] = useState(false);
   const [editEmail, setEditEmail] = useState(false);
   const initials = profile.name

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { router } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { EmptyState } from '@/components/empty-state';
@@ -15,25 +15,22 @@ import { openNewNote } from '@/lib/notes-actions';
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export default function CalendarScreen() {
-  const { activeNotes, createNote, toggleCheckItem, setActiveCalendarDay } = useNotes();
+  const { activeNotes, createNote, toggleCheckItem, selectedCalendarDay, setActiveCalendarDay } = useNotes();
   const { columns, contentPad, noteGap, showSidebar, width } = useResponsive();
-  const [cursor, setCursor] = useState(() => new Date());
-  const [selected, setSelected] = useState(() => startOfDay());
+  const selected = selectedCalendarDay ?? startOfDay();
+  const [cursor, setCursor] = useState(() => new Date(selected));
 
-  useFocusEffect(
-    useCallback(() => {
-      setActiveCalendarDay(selected);
-    }, [selected, setActiveCalendarDay])
-  );
-
-  const pickDay = (day: number) => {
-    const next = startOfDay(new Date(year, month, day));
-    setSelected(next);
-    setActiveCalendarDay(next);
-  };
+  useEffect(() => {
+    if (selectedCalendarDay == null) setActiveCalendarDay(startOfDay());
+  }, [selectedCalendarDay, setActiveCalendarDay]);
 
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
+
+  const pickDay = (day: number) => {
+    setActiveCalendarDay(startOfDay(new Date(year, month, day)));
+  };
+
   const first = new Date(year, month, 1);
   const startWeekday = (first.getDay() + 6) % 7;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -45,9 +42,9 @@ export default function CalendarScreen() {
   }, [daysInMonth, startWeekday]);
 
   const notesByDay = useMemo(() => {
-    const map = new Map<number, number>();
+    const map = new Map<string, number>();
     for (const note of activeNotes) {
-      const key = noteCalendarDay(note);
+      const key = String(noteCalendarDay(note));
       map.set(key, (map.get(key) ?? 0) + 1);
     }
     return map;
@@ -62,6 +59,8 @@ export default function CalendarScreen() {
     const next = new Date(year, month + delta, 1);
     setCursor(next);
   };
+
+  const addForSelected = () => openNewNote(createNote, { datedAt: selected });
 
   return (
     <Screen>
@@ -91,14 +90,13 @@ export default function CalendarScreen() {
         <View style={styles.grid}>
           {cells.map((day, index) => {
             if (!day) return <View key={`e-${index}`} style={styles.cell} />;
-            const ts = new Date(year, month, day).getTime();
-            const key = startOfDay(new Date(ts));
+            const key = startOfDay(new Date(year, month, day));
             const active = sameDay(key, selected);
             const today = sameDay(key, Date.now());
-            const count = notesByDay.get(key) ?? 0;
+            const count = notesByDay.get(String(key)) ?? 0;
             return (
               <Pressable
-                key={day}
+                key={`${year}-${month}-${day}`}
                 onPress={() => pickDay(day)}
                 style={[styles.cell, active && styles.cellActive, today && !active && styles.cellToday]}>
                 <Text style={[styles.dayNum, active && styles.dayNumActive]}>{day}</Text>
@@ -114,9 +112,7 @@ export default function CalendarScreen() {
               ? `${selectedNotes.length} notes · ${formatDayLabel(selected)}`
               : formatDayLabel(selected)}
           </Text>
-          <Pressable
-            onPress={() => openNewNote(createNote, { datedAt: selected })}
-            style={styles.add}>
+          <Pressable onPress={addForSelected} style={styles.add}>
             <Ionicons name="add" size={16} color="#fff" />
             <Text style={styles.addLabel}>Note</Text>
           </Pressable>
@@ -128,7 +124,7 @@ export default function CalendarScreen() {
             title="Nothing captured"
             body="Nothing on this day yet. Tap + to save a note here — including future dates."
             actionLabel="Add note"
-            onAction={() => openNewNote(createNote, { datedAt: selected })}
+            onAction={addForSelected}
           />
         ) : (
           <View style={[styles.notes, { gap: noteGap }]}>

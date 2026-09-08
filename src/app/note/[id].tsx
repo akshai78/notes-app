@@ -22,7 +22,7 @@ import { formatDayLabel, startOfDay } from '@/lib/dates';
 import type { NoteColorId } from '@/lib/types';
 
 export default function NoteEditorScreen() {
-  const { id, date } = useLocalSearchParams<{ id: string; date?: string }>();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const {
     notes,
@@ -43,19 +43,6 @@ export default function NoteEditorScreen() {
   const [sheet, setSheet] = useState(false);
   const [tagModal, setTagModal] = useState(false);
   const [folderSheet, setFolderSheet] = useState(false);
-
-  useEffect(() => {
-    if (!id) return;
-    const requested = Number(Array.isArray(date) ? date[0] : date);
-    if (!Number.isFinite(requested)) return;
-    const locked = startOfDay(new Date(requested));
-    const current = notes.find((item) => item.id === id);
-    if (current && startOfDay(new Date(current.datedAt)) !== locked) {
-      updateNote(id, { datedAt: locked });
-    }
-    // Apply the date from Calendar once when the editor opens.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, date]);
 
   useEffect(() => {
     if (!note) {
