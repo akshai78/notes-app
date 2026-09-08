@@ -23,7 +23,6 @@ export default function CalendarScreen() {
   useFocusEffect(
     useCallback(() => {
       setActiveCalendarDay(selected);
-      return () => setActiveCalendarDay(null);
     }, [selected, setActiveCalendarDay])
   );
 

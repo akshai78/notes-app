@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ActionSheet, type ActionItem } from '@/components/action-sheet';
@@ -27,6 +27,7 @@ export default function HomeScreen() {
     activeNotes,
     notesInFolder,
     createNote,
+    setActiveCalendarDay,
     createFolder,
     renameFolder,
     deleteFolder,
@@ -44,6 +45,12 @@ export default function HomeScreen() {
   const [renameTarget, setRenameTarget] = useState<Folder | null>(null);
   const [sheet, setSheet] = useState<{ type: 'note' | 'folder' | 'move'; id: string } | null>(null);
   const [savedFlash, setSavedFlash] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      setActiveCalendarDay(null);
+    }, [setActiveCalendarDay])
+  );
 
   const initials = profile.name
     .split(' ')

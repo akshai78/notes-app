@@ -24,6 +24,7 @@ function RootNav() {
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Colors.bg } }}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="note/new" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="note/[id]" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="folder/[id]" options={{ animation: 'slide_from_right' }} />
       </Stack>

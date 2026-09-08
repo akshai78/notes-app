@@ -44,6 +44,7 @@ type NotesContextValue = {
   notesInFolder: (folderId: string) => Note[];
   updateProfile: (patch: Partial<Profile>) => void;
   resetDemo: () => void;
+  selectedCalendarDay: number | null;
   setActiveCalendarDay: (day: number | null) => void;
 };
 
@@ -69,9 +70,12 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile>(seedState.profile);
   const persistTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const calendarDayRef = useRef<number | null>(null);
+  const [selectedCalendarDay, setSelectedCalendarDay] = useState<number | null>(null);
 
   const setActiveCalendarDay = useCallback((day: number | null) => {
-    calendarDayRef.current = day == null ? null : startOfDay(new Date(day));
+    const next = day == null ? null : startOfDay(new Date(day));
+    calendarDayRef.current = next;
+    setSelectedCalendarDay(next);
   }, []);
 
   useEffect(() => {
@@ -112,7 +116,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
         title: input.title ?? '',
         body: input.body ?? '',
         color: input.color ?? nextColor(notes.length),
-        folderId: input.folderId ?? null,
+        folderId: input.folderId || null,
         tags: input.tags ?? [],
         checklist: input.checklist ?? [],
         pinned: false,
@@ -350,6 +354,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       notesInFolder,
       updateProfile,
       resetDemo,
+      selectedCalendarDay,
       setActiveCalendarDay,
     }),
     [
@@ -380,6 +385,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       notesInFolder,
       updateProfile,
       resetDemo,
+      selectedCalendarDay,
       setActiveCalendarDay,
     ]
   );

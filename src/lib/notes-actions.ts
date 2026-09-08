@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
 
-import type { Note } from '@/lib/types';
+import { startOfDay } from '@/lib/dates';
 import { tap } from '@/lib/haptics';
+import type { Note } from '@/lib/types';
 
 export function titleFromText(text: string): string {
   const line = text.trim().split('\n')[0] ?? '';
@@ -9,17 +10,19 @@ export function titleFromText(text: string): string {
 }
 
 export function openNewNote(
-  createNote: (input?: Partial<Note>) => Note,
+  _createNote: (input?: Partial<Note>) => Note,
   input: Partial<Note> = {}
-): string {
+): void {
   tap();
-  const note = createNote(input);
+  const datedAt = startOfDay(new Date(input.datedAt ?? Date.now()));
   router.push({
-    pathname: '/note/[id]',
+    pathname: '/note/new',
     params: {
-      id: note.id,
-      date: String(note.datedAt),
+      date: String(datedAt),
+      title: input.title ?? '',
+      body: input.body ?? '',
+      folderId: input.folderId ?? '',
+      color: input.color ?? '',
     },
   });
-  return note.id;
 }

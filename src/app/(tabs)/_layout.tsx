@@ -10,13 +10,17 @@ import { openNewNote } from '@/lib/notes-actions';
 
 export default function TabsLayout() {
   const { showSidebar } = useResponsive();
-  const { createNote } = useNotes();
+  const { createNote, selectedCalendarDay } = useNotes();
 
-  const create = () => openNewNote(createNote);
+  const create = (tab?: string) =>
+    openNewNote(
+      createNote,
+      tab === 'calendar' && selectedCalendarDay ? { datedAt: selectedCalendarDay } : {}
+    );
 
   return (
     <View style={styles.shell}>
-      {showSidebar ? <Sidebar onCreate={create} /> : null}
+      {showSidebar ? <Sidebar onCreate={() => create(selectedCalendarDay ? 'calendar' : undefined)} /> : null}
       <View style={styles.content}>
         <Tabs
           tabBar={(props) => {
@@ -26,7 +30,7 @@ export default function TabsLayout() {
               <MobileTabBar
                 current={current}
                 onTab={(name) => props.navigation.navigate(name)}
-                onCreate={create}
+                onCreate={() => create(current)}
               />
             );
           }}
