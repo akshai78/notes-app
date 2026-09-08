@@ -44,6 +44,7 @@ type NotesContextValue = {
   notesInFolder: (folderId: string) => Note[];
   updateProfile: (patch: Partial<Profile>) => void;
   resetDemo: () => void;
+  setActiveCalendarDay: (day: number | null) => void;
 };
 
 const NotesContext = createContext<NotesContextValue | null>(null);
@@ -67,6 +68,11 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [profile, setProfile] = useState<Profile>(seedState.profile);
   const persistTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const calendarDayRef = useRef<number | null>(null);
+
+  const setActiveCalendarDay = useCallback((day: number | null) => {
+    calendarDayRef.current = day == null ? null : startOfDay(new Date(day));
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -112,7 +118,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
         pinned: false,
         archived: false,
         deletedAt: null,
-        datedAt: startOfDay(new Date(input.datedAt ?? Date.now())),
+        datedAt: startOfDay(new Date(input.datedAt ?? calendarDayRef.current ?? Date.now())),
         createdAt: input.createdAt ?? Date.now(),
         updatedAt: input.updatedAt ?? Date.now(),
       };
@@ -124,9 +130,14 @@ export function NotesProvider({ children }: { children: ReactNode }) {
 
   const updateNote = useCallback((id: string, patch: Partial<Note>) => {
     setNotes((current) =>
-      current.map((note) =>
-        note.id === id ? { ...note, ...patch, updatedAt: Date.now() } : note
-      )
+      current.map((note) => {
+        if (note.id !== id) return note;
+        const datedAt =
+          patch.datedAt === undefined || patch.datedAt === null
+            ? note.datedAt
+            : startOfDay(new Date(patch.datedAt));
+        return { ...note, ...patch, datedAt, updatedAt: Date.now() };
+      })
     );
   }, []);
 
@@ -339,6 +350,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       notesInFolder,
       updateProfile,
       resetDemo,
+      setActiveCalendarDay,
     }),
     [
       ready,
@@ -368,6 +380,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       notesInFolder,
       updateProfile,
       resetDemo,
+      setActiveCalendarDay,
     ]
   );
 

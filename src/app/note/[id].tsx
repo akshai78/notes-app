@@ -18,11 +18,11 @@ import { ColorDots } from '@/components/color-dots';
 import { PromptModal } from '@/components/prompt-modal';
 import { Colors, Fonts, Pastels, Radius } from '@/constants/theme';
 import { useNotes } from '@/context/notes-context';
-import { formatTimeDay } from '@/lib/dates';
+import { formatDayLabel, startOfDay } from '@/lib/dates';
 import type { NoteColorId } from '@/lib/types';
 
 export default function NoteEditorScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, date } = useLocalSearchParams<{ id: string; date?: string }>();
   const insets = useSafeAreaInsets();
   const {
     notes,
@@ -43,6 +43,19 @@ export default function NoteEditorScreen() {
   const [sheet, setSheet] = useState(false);
   const [tagModal, setTagModal] = useState(false);
   const [folderSheet, setFolderSheet] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+    const requested = Number(Array.isArray(date) ? date[0] : date);
+    if (!Number.isFinite(requested)) return;
+    const locked = startOfDay(new Date(requested));
+    const current = notes.find((item) => item.id === id);
+    if (current && startOfDay(new Date(current.datedAt)) !== locked) {
+      updateNote(id, { datedAt: locked });
+    }
+    // Apply the date from Calendar once when the editor opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, date]);
 
   useEffect(() => {
     if (!note) {
@@ -138,6 +151,29 @@ export default function NoteEditorScreen() {
         <ScrollView
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + 120 }]}>
+          <View style={styles.dateRow}>
+            <Pressable
+              onPress={() =>
+                updateNote(note.id, { datedAt: startOfDay(new Date(note.datedAt - 86_400_000)) })
+              }
+              style={styles.dateStep}
+              hitSlop={8}>
+              <Ionicons name="chevron-back" size={16} color={Colors.text} />
+            </Pressable>
+            <View style={styles.dateBadge}>
+              <Ionicons name="calendar-outline" size={14} color={Colors.text} />
+              <Text style={styles.dateLabel}>{formatDayLabel(note.datedAt)}</Text>
+            </View>
+            <Pressable
+              onPress={() =>
+                updateNote(note.id, { datedAt: startOfDay(new Date(note.datedAt + 86_400_000)) })
+              }
+              style={styles.dateStep}
+              hitSlop={8}>
+              <Ionicons name="chevron-forward" size={16} color={Colors.text} />
+            </Pressable>
+          </View>
+
           <ColorDots value={note.color} onChange={(color: NoteColorId) => updateNote(note.id, { color })} />
 
           {note.tags.length ? (
@@ -212,7 +248,7 @@ export default function NoteEditorScreen() {
             label={folderName ?? 'Folder'}
             onPress={() => setFolderSheet(true)}
           />
-          <Text style={styles.stamp}>{formatTimeDay(note.updatedAt)}</Text>
+          <Text style={styles.stamp}>{formatDayLabel(note.datedAt)}</Text>
         </View>
       </KeyboardAvoidingView>
 
@@ -285,6 +321,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
     paddingTop: 12,
     gap: 12,
+  },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  dateStep: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dateBadge: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    borderRadius: Radius.pill,
+    height: 36,
+    paddingHorizontal: 12,
+  },
+  dateLabel: {
+    fontFamily: Fonts.semibold,
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.text,
   },
   tags: {
     flexDirection: 'row',

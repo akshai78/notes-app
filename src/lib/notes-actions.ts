@@ -14,6 +14,12 @@ export function openNewNote(
 ): string {
   tap();
   const note = createNote(input);
-  router.push(`/note/${note.id}`);
+  router.push({
+    pathname: '/note/[id]',
+    params: {
+      id: note.id,
+      date: String(note.datedAt),
+    },
+  });
   return note.id;
 }

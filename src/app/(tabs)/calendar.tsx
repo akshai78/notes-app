@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { EmptyState } from '@/components/empty-state';
@@ -15,10 +15,23 @@ import { openNewNote } from '@/lib/notes-actions';
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export default function CalendarScreen() {
-  const { activeNotes, createNote, toggleCheckItem } = useNotes();
+  const { activeNotes, createNote, toggleCheckItem, setActiveCalendarDay } = useNotes();
   const { columns, contentPad, noteGap, showSidebar, width } = useResponsive();
   const [cursor, setCursor] = useState(() => new Date());
   const [selected, setSelected] = useState(() => startOfDay());
+
+  useFocusEffect(
+    useCallback(() => {
+      setActiveCalendarDay(selected);
+      return () => setActiveCalendarDay(null);
+    }, [selected, setActiveCalendarDay])
+  );
+
+  const pickDay = (day: number) => {
+    const next = startOfDay(new Date(year, month, day));
+    setSelected(next);
+    setActiveCalendarDay(next);
+  };
 
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
@@ -87,7 +100,7 @@ export default function CalendarScreen() {
             return (
               <Pressable
                 key={day}
-                onPress={() => setSelected(key)}
+                onPress={() => pickDay(day)}
                 style={[styles.cell, active && styles.cellActive, today && !active && styles.cellToday]}>
                 <Text style={[styles.dayNum, active && styles.dayNumActive]}>{day}</Text>
                 {count ? <View style={[styles.dot, active && styles.dotActive]} /> : <View style={styles.dotSpacer} />}
@@ -115,6 +128,8 @@ export default function CalendarScreen() {
             icon="calendar-outline"
             title="Nothing captured"
             body="Nothing on this day yet. Tap + to save a note here — including future dates."
+            actionLabel="Add note"
+            onAction={() => openNewNote(createNote, { datedAt: selected })}
           />
         ) : (
           <View style={[styles.notes, { gap: noteGap }]}>
