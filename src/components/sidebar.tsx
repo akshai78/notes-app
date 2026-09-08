@@ -4,8 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Logo } from '@/components/logo';
-import { AccentDots, Colors, Fonts, Layout, Radius, Spacing } from '@/constants/theme';
-import { tap } from '@/lib/haptics';
+import { Colors, Fonts, Layout, Radius, Spacing } from '@/constants/theme';
 
 const ITEMS: { href: string; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { href: '/calendar', label: 'Calendar', icon: 'calendar-outline' },
@@ -14,10 +13,10 @@ const ITEMS: { href: string; label: string; icon: keyof typeof Ionicons.glyphMap
 ];
 
 type Props = {
-  onCreate: () => void;
+  onCreate?: () => void;
 };
 
-export function Sidebar({ onCreate }: Props) {
+export function Sidebar(_props: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const params = useGlobalSearchParams<{ pane?: string }>();
@@ -28,33 +27,6 @@ export function Sidebar({ onCreate }: Props) {
   return (
     <View style={[styles.wrap, { paddingTop: insets.top + Spacing.lg, paddingBottom: insets.bottom + Spacing.lg }]}>
       <Logo />
-
-      <View style={styles.addSection}>
-        <Text style={styles.addLabel}>Add new</Text>
-        <View style={styles.dots}>
-          <Pressable
-            onPress={() => {
-              tap();
-              onCreate();
-            }}
-            style={[styles.dot, { backgroundColor: AccentDots.yellow }]}
-          />
-          <Pressable
-            onPress={() => {
-              tap();
-              onCreate();
-            }}
-            style={[styles.dot, { backgroundColor: AccentDots.blue }]}
-          />
-          <Pressable
-            onPress={() => {
-              tap();
-              onCreate();
-            }}
-            style={[styles.dot, { backgroundColor: AccentDots.red }]}
-          />
-        </View>
-      </View>
 
       <View style={styles.menu}>
         <Pressable
@@ -92,25 +64,6 @@ const styles = StyleSheet.create({
     borderRightWidth: 1,
     borderRightColor: Colors.borderLight,
     paddingHorizontal: Spacing.lg,
-  },
-  addSection: {
-    marginTop: Spacing.xl,
-    gap: Spacing.sm,
-  },
-  addLabel: {
-    fontFamily: Fonts.medium,
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.textSoft,
-  },
-  dots: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  dot: {
-    width: 14,
-    height: 14,
-    borderRadius: Radius.pill,
   },
   menu: {
     marginTop: Spacing.xl,
