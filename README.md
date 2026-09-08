@@ -10,17 +10,31 @@ The home screen is a pastel card board with folders, tags, and checklists. A jot
 - Tap the black **+** button (or **Add new** on larger screens) to open a full editor with the keyboard ready.
 - Empty notes are discarded when you go back, so the board stays clean.
 
-## Run it
+## Run it on your phone
+
+1. Install **[Expo Go](https://expo.dev/go)** (this app uses SDK 57).
+2. From this repo:
+
+   ```bash
+   npm install
+   npm start
+   ```
+
+   That is `expo start --go`. It prints a QR code and serves iOS, Android, and web.
+3. Open the project in Expo Go:
+   - **iPhone:** scan the QR code with the Camera app, then open in Expo Go
+   - **Android:** open Expo Go and scan the QR code there
+
+Phone and computer need the same Wi‑Fi. If they are on different networks:
 
 ```bash
-npm install
-npx expo start
+npm run start:tunnel
 ```
 
-Then open it in Expo Go, an iOS simulator, an Android emulator, or the web app.
+Web:
 
 ```bash
-npx expo start --web --port 43147
+npm run web
 ```
 
 ## Layouts
