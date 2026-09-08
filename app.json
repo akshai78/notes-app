@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "Mino",
-    "slug": "mino",
+    "name": "Code Red",
+    "slug": "code-red",
     "version": "1.0.0",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
-    "scheme": "mino",
+    "scheme": "codered",
     "userInterfaceStyle": "light",
     "ios": {
       "icon": "./assets/expo.icon",
       "supportsTablet": true,
-      "bundleIdentifier": "app.mino.notes",
+      "bundleIdentifier": "app.codered.notes",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -23,7 +23,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": true,
-      "package": "app.mino.notes"
+      "package": "app.codered.notes"
     },
     "web": {
       "output": "single",

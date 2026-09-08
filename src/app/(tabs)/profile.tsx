@@ -97,7 +97,7 @@ export default function ProfileScreen() {
         </Pressable>
 
         <Text style={styles.about}>
-          Mino keeps every note on this device. Capture from the black plus button, or type into the jot bar and
+          Code Red keeps every note on this device. Capture from the black plus button, or type into the jot bar and
           hit save — no extra screens required.
         </Text>
       </ScrollView>

@@ -1,4 +1,4 @@
-# Mino
+# Code Red
 
 A mobile-first Expo notes app built around one job: **get a thought down before it disappears**.
 

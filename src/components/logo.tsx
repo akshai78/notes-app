@@ -9,7 +9,7 @@ export function Logo({ compact = false }: { compact?: boolean }) {
         <View style={styles.dotBack} />
         <View style={styles.dotFront} />
       </View>
-      {!compact ? <Text style={styles.word}>Mino</Text> : null}
+      {!compact ? <Text style={styles.word}>Code Red</Text> : null}
     </View>
   );
 }
@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
   },
   word: {
     fontFamily: Fonts.bold,
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '800',
     color: Colors.text,
     letterSpacing: -0.4,
