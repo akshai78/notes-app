@@ -1,7 +1,7 @@
 {
   "name": "code-red",
   "main": "expo-router/entry",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "dependencies": {
     "@expo/ui": "~57.0.17",
     "@expo/vector-icons": "^15.0.2",
@@ -37,9 +37,9 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
-    "start": "expo start --go --port 43147",
-    "start:lan": "expo start --go --lan --port 43147",
-    "start:tunnel": "expo start --go --tunnel --port 43147",
+    "start": "expo start --go --clear --port 8081",
+    "start:lan": "expo start --go --lan --clear --port 8081",
+    "start:tunnel": "expo start --go --tunnel --clear --port 8081",
     "android": "expo start --android --port 43147",
     "ios": "expo start --ios --port 43147",
     "web": "expo start --web --port 43147",
