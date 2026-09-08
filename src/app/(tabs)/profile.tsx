@@ -100,7 +100,7 @@ export default function ProfileScreen() {
           Code Red keeps every note on this device. Capture from the black plus button, or type into the jot bar and
           hit save — no extra screens required.
         </Text>
-        <Text style={styles.version}>Code Red 1.0.1</Text>
+        <Text style={styles.version}>Code Red 1.1</Text>
       </ScrollView>
 
       <PromptModal

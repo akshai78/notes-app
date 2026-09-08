@@ -20,7 +20,7 @@ The home screen is a pastel card board with folders, tags, and checklists. A jot
    npm start
    ```
 
-   That starts Code Red on port **47391** (not 8081 — 8081 is often another Expo app). The terminal must say `Starting project at .../notes-app` and `Web: http://localhost:47391`. Confirm the build on **You → Code Red 1.0.1**.
+   That starts Code Red on port **47391** (not 8081 — 8081 is often another Expo app). The terminal must say `Starting project at .../notes-app` and `Web: http://localhost:47391`. Confirm the build on **You → Code Red 1.1**.
 3. Open the project in Expo Go:
    - **iPhone:** scan the QR code with the Camera app, then open in Expo Go
    - **Android:** open Expo Go and scan the QR code there
