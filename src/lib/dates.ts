@@ -66,6 +66,15 @@ export function sameDay(a: number, b: number): boolean {
   return startOfDay(new Date(a)) === startOfDay(new Date(b));
 }
 
+export function noteCalendarDay(note: { datedAt?: number; createdAt: number; updatedAt: number }): number {
+  return startOfDay(new Date(note.datedAt ?? note.createdAt ?? note.updatedAt));
+}
+
+export function formatDayLabel(timestamp: number): string {
+  const date = new Date(timestamp);
+  return `${WEEKDAYS[date.getDay()]}, ${date.getDate()} ${MONTHS[date.getMonth()]}`;
+}
+
 export function greetingForNow(): string {
   const hour = new Date().getHours();
   if (hour < 12) return 'Good morning';

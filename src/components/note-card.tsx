@@ -30,7 +30,7 @@ export function NoteCard({ note, width, onPress, onMore, onToggleCheck }: Props)
         { backgroundColor: palette.bg, width, opacity: pressed ? 0.94 : 1 },
       ]}>
       <View style={styles.top}>
-        <Text style={styles.date}>{formatCardDate(note.updatedAt)}</Text>
+        <Text style={styles.date}>{formatCardDate(note.datedAt ?? note.updatedAt)}</Text>
         <View style={styles.topActions}>
           {note.pinned ? <Ionicons name="pin" size={14} color={palette.icon} /> : null}
           <Pressable onPress={onMore} hitSlop={8} style={styles.iconBtn}>

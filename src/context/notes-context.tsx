@@ -11,6 +11,7 @@ import {
 
 import { seedState } from '@/constants/seed';
 import { PASTEL_ORDER } from '@/constants/theme';
+import { startOfDay } from '@/lib/dates';
 import { createId } from '@/lib/id';
 import { loadState, saveState } from '@/lib/storage';
 import type { CheckItem, Folder, Note, NoteColorId, Profile } from '@/lib/types';
@@ -72,7 +73,12 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     loadState().then((stored) => {
       if (!mounted) return;
       const data = stored ?? seedState;
-      setNotes(data.notes);
+      setNotes(
+        data.notes.map((note) => ({
+          ...note,
+          datedAt: startOfDay(new Date(note.datedAt ?? note.createdAt ?? note.updatedAt)),
+        }))
+      );
       setFolders(data.folders);
       setProfile(data.profile);
       setReady(true);
@@ -106,8 +112,9 @@ export function NotesProvider({ children }: { children: ReactNode }) {
         pinned: false,
         archived: false,
         deletedAt: null,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
+        datedAt: startOfDay(new Date(input.datedAt ?? Date.now())),
+        createdAt: input.createdAt ?? Date.now(),
+        updatedAt: input.updatedAt ?? Date.now(),
       };
       setNotes((current) => [created, ...current]);
       return created;

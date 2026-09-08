@@ -17,6 +17,7 @@ export type Note = {
   pinned: boolean;
   archived: boolean;
   deletedAt: number | null;
+  datedAt: number;
   createdAt: number;
   updatedAt: number;
 };

@@ -21,6 +21,7 @@ function note(partial: Partial<Note> & Pick<Note, 'title' | 'body' | 'color' | '
     tags: [],
     checklist: [],
     folderId: null,
+    datedAt: partial.createdAt,
     ...partial,
   };
 }

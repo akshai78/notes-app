@@ -9,7 +9,7 @@ import { Screen } from '@/components/screen';
 import { Colors, Fonts, Layout, Radius } from '@/constants/theme';
 import { useNotes } from '@/context/notes-context';
 import { useResponsive } from '@/hooks/use-responsive';
-import { formatMonthYear, sameDay, startOfDay } from '@/lib/dates';
+import { formatDayLabel, formatMonthYear, noteCalendarDay, sameDay, startOfDay } from '@/lib/dates';
 import { openNewNote } from '@/lib/notes-actions';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -35,13 +35,13 @@ export default function CalendarScreen() {
   const notesByDay = useMemo(() => {
     const map = new Map<number, number>();
     for (const note of activeNotes) {
-      const key = startOfDay(new Date(note.updatedAt));
+      const key = noteCalendarDay(note);
       map.set(key, (map.get(key) ?? 0) + 1);
     }
     return map;
   }, [activeNotes]);
 
-  const selectedNotes = activeNotes.filter((note) => sameDay(note.updatedAt, selected));
+  const selectedNotes = activeNotes.filter((note) => sameDay(noteCalendarDay(note), selected));
   const innerWidth = Math.min(width - (showSidebar ? Layout.sidebarWidth : 0), Layout.maxContent);
   const usable = Math.max(innerWidth - contentPad * 2, 280);
   const cardWidth = columns === 1 ? usable : (usable - noteGap * (columns - 1)) / columns;
@@ -98,10 +98,12 @@ export default function CalendarScreen() {
 
         <View style={styles.listHead}>
           <Text style={styles.listTitle}>
-            {selectedNotes.length ? `${selectedNotes.length} notes` : 'No notes this day'}
+            {selectedNotes.length
+              ? `${selectedNotes.length} notes · ${formatDayLabel(selected)}`
+              : formatDayLabel(selected)}
           </Text>
           <Pressable
-            onPress={() => openNewNote(createNote)}
+            onPress={() => openNewNote(createNote, { datedAt: selected })}
             style={styles.add}>
             <Ionicons name="add" size={16} color="#fff" />
             <Text style={styles.addLabel}>Note</Text>
@@ -112,7 +114,7 @@ export default function CalendarScreen() {
           <EmptyState
             icon="calendar-outline"
             title="Nothing captured"
-            body="Days with a purple dot already have notes. Tap + to jot one for today."
+            body="Nothing on this day yet. Tap + to save a note here — including future dates."
           />
         ) : (
           <View style={[styles.notes, { gap: noteGap }]}>
