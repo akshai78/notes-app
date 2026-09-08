@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { usePathname, useRouter } from 'expo-router';
+import { useGlobalSearchParams, usePathname, useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -10,7 +10,7 @@ import { tap } from '@/lib/haptics';
 const ITEMS: { href: string; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { href: '/calendar', label: 'Calendar', icon: 'calendar-outline' },
   { href: '/archive', label: 'Archive', icon: 'archive-outline' },
-  { href: '/archive', label: 'Trash', icon: 'trash-outline' },
+  { href: '/archive?pane=trash', label: 'Trash', icon: 'trash-outline' },
 ];
 
 type Props = {
@@ -20,7 +20,10 @@ type Props = {
 export function Sidebar({ onCreate }: Props) {
   const pathname = usePathname();
   const router = useRouter();
+  const params = useGlobalSearchParams<{ pane?: string }>();
   const insets = useSafeAreaInsets();
+  const onArchive = pathname.startsWith('/archive');
+  const onTrash = onArchive && params.pane === 'trash';
 
   return (
     <View style={[styles.wrap, { paddingTop: insets.top + Spacing.lg, paddingBottom: insets.bottom + Spacing.lg }]}>
@@ -61,7 +64,12 @@ export function Sidebar({ onCreate }: Props) {
           <Text style={[styles.itemLabel, pathname === '/' && styles.itemLabelActive]}>Notes</Text>
         </Pressable>
         {ITEMS.map((item) => {
-          const active = pathname.startsWith(item.href) && item.label !== 'Trash';
+          const active =
+            item.label === 'Trash'
+              ? onTrash
+              : item.label === 'Archive'
+                ? onArchive && !onTrash
+                : pathname.startsWith(item.href);
           return (
             <Pressable
               key={item.label}

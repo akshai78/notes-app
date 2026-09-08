@@ -1,5 +1,5 @@
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { EmptyState } from '@/components/empty-state';
@@ -16,7 +16,17 @@ type Pane = 'archive' | 'trash';
 export default function ArchiveScreen() {
   const { archivedNotes, trashedNotes, createNote, unarchiveNote, restoreNote, permanentlyDelete, emptyTrash, toggleCheckItem } =
     useNotes();
-  const [pane, setPane] = useState<Pane>('archive');
+  const { pane: paneParam } = useLocalSearchParams<{ pane?: string }>();
+  const [pane, setPane] = useState<Pane>(paneParam === 'trash' ? 'trash' : 'archive');
+
+  useEffect(() => {
+    setPane(paneParam === 'trash' ? 'trash' : 'archive');
+  }, [paneParam]);
+
+  const selectPane = (next: Pane) => {
+    setPane(next);
+    router.replace(next === 'trash' ? '/archive?pane=trash' : '/archive');
+  };
   const { columns, contentPad, noteGap, showSidebar, width } = useResponsive();
   const list: Note[] = pane === 'archive' ? archivedNotes : trashedNotes;
   const innerWidth = Math.min(width - (showSidebar ? Layout.sidebarWidth : 0), Layout.maxContent);
@@ -31,12 +41,12 @@ export default function ArchiveScreen() {
         <Text style={styles.kicker}>Records</Text>
         <Text style={styles.title}>Archive & trash</Text>
         <View style={styles.switch}>
-          <Pressable onPress={() => setPane('archive')} style={[styles.pill, pane === 'archive' && styles.pillOn]}>
+          <Pressable onPress={() => selectPane('archive')} style={[styles.pill, pane === 'archive' && styles.pillOn]}>
             <Text style={[styles.pillText, pane === 'archive' && styles.pillTextOn]}>
               Archive ({archivedNotes.length})
             </Text>
           </Pressable>
-          <Pressable onPress={() => setPane('trash')} style={[styles.pill, pane === 'trash' && styles.pillOn]}>
+          <Pressable onPress={() => selectPane('trash')} style={[styles.pill, pane === 'trash' && styles.pillOn]}>
             <Text style={[styles.pillText, pane === 'trash' && styles.pillTextOn]}>
               Trash ({trashedNotes.length})
             </Text>
