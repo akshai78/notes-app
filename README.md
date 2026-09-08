@@ -43,7 +43,70 @@ npm run web
 - **Tablet:** two-column note grid.
 - **Desktop / large web:** sidebar navigation and up to three card columns.
 
-Notes, folders, and profile live in AsyncStorage. Use **Restore sample notes** on the profile screen to reset the starter set.
+Notes, folders, and profile live on the device (AsyncStorage). Use **Restore sample notes** on the profile screen to reset the starter set.
+
+## Installable Android & iOS apps
+
+Use **[EAS Build](https://docs.expo.dev/build/introduction/)** (Expo’s cloud build service) to create files you can install without Expo Go.
+
+### One-time setup
+
+1. Create a free account at [expo.dev](https://expo.dev/signup).
+2. In the project folder:
+
+   ```bash
+   npm install
+   npx eas login
+   npx eas init
+   ```
+
+   `eas init` links this repo to your Expo project and adds a project ID to `app.json`.
+
+### Android — installable APK
+
+Build an APK you can sideload on any Android phone:
+
+```bash
+npm run build:android
+```
+
+When the build finishes, open the link EAS prints (or [expo.dev](https://expo.dev) → your project → **Builds**) and download the **`.apk`**. On the phone:
+
+1. Transfer the APK (download link, email, or USB).
+2. Open it and allow **Install from unknown sources** if Android asks.
+3. Install **Code Red**.
+
+For Google Play later, use `npm run build:android:store` (AAB format).
+
+### iOS — install on iPhone
+
+You need an **[Apple Developer account](https://developer.apple.com/programs/)** ($99/year) to install on a real iPhone outside the App Store.
+
+```bash
+npm run build:ios
+```
+
+EAS will walk you through Apple credentials (or create them for you). After the build:
+
+- **TestFlight** (recommended): submit the build to App Store Connect and install via the TestFlight app.
+- **Ad hoc**: register your iPhone’s UDID in the Apple Developer portal, then install from the EAS download link.
+
+Build both platforms at once:
+
+```bash
+npm run build:all
+```
+
+### Build profiles
+
+| Script | Output | Use |
+|--------|--------|-----|
+| `npm run build:android` | APK | Direct install on Android |
+| `npm run build:ios` | IPA | TestFlight / ad hoc on iPhone |
+| `npm run build:android:store` | AAB | Google Play upload |
+| `npm run build:ios:store` | IPA | App Store / TestFlight |
+
+See `eas.json` for profile details.
 
 ## Stack
 
