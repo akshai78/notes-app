@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { Colors, Fonts, Radius, Shadow } from '@/constants/theme';
+import { Colors, Fonts, Radius, Spacing } from '@/constants/theme';
 import { tap } from '@/lib/haptics';
 
 type Props = {
@@ -25,14 +25,14 @@ export function QuickCapture({ onSubmit, onExpand }: Props) {
   };
 
   return (
-    <View style={[styles.wrap, Shadow.card]}>
+    <View style={styles.wrap}>
       <View style={styles.icon}>
-        <Ionicons name="flash" size={16} color={Colors.primary} />
+        <Ionicons name="flash-outline" size={16} color={Colors.textSoft} />
       </View>
       <TextInput
         value={text}
         onChangeText={setText}
-        placeholder="Jot a thought — tap save or press return"
+        placeholder="Quick capture — jot a thought"
         placeholderTextColor={Colors.textMuted}
         style={styles.input}
         returnKeyType="done"
@@ -41,7 +41,6 @@ export function QuickCapture({ onSubmit, onExpand }: Props) {
       />
       <Pressable onPress={save} style={({ pressed }) => [styles.button, pressed && styles.pressed]}>
         <Text style={styles.buttonLabel}>{text.trim() ? 'Save' : 'Open'}</Text>
-        <Ionicons name={text.trim() ? 'arrow-up' : 'create-outline'} size={14} color="#fff" />
       </Pressable>
     </View>
   );
@@ -51,20 +50,20 @@ const styles = StyleSheet.create({
   wrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: Spacing.sm,
     backgroundColor: Colors.surface,
-    borderRadius: Radius.xl,
-    paddingLeft: 10,
-    paddingRight: 8,
-    paddingVertical: 8,
+    borderRadius: Radius.lg,
+    paddingLeft: Spacing.md,
+    paddingRight: Spacing.sm,
+    paddingVertical: Spacing.sm,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: Colors.borderLight,
   },
   icon: {
-    width: 34,
-    height: 34,
-    borderRadius: 12,
-    backgroundColor: Colors.primarySoft,
+    width: 36,
+    height: 36,
+    borderRadius: Radius.sm,
+    backgroundColor: Colors.bg,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -73,24 +72,23 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.regular,
     fontSize: 15,
     color: Colors.text,
-    paddingVertical: 10,
+    paddingVertical: Spacing.sm,
   },
   button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
     backgroundColor: Colors.ink,
-    paddingHorizontal: 14,
-    height: 38,
+    paddingHorizontal: Spacing.md,
+    height: 36,
     borderRadius: Radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   pressed: {
-    opacity: 0.85,
+    opacity: 0.88,
   },
   buttonLabel: {
     color: '#fff',
     fontFamily: Fonts.semibold,
-    fontWeight: '700',
+    fontWeight: '600',
     fontSize: 13,
   },
 });

@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Colors, Fonts, Layout, Radius, Shadow } from '@/constants/theme';
+import { Colors, Fonts, Layout, Radius, Shadow, Spacing } from '@/constants/theme';
 import { tap } from '@/lib/haptics';
 
 type Tab = {
@@ -57,7 +57,7 @@ export function MobileTabBar({ current, onTab, onCreate }: Props) {
 function TabButton({ tab, active, onPress }: { tab: Tab; active: boolean; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} style={styles.tab} accessibilityRole="button" accessibilityLabel={tab.label}>
-      <Ionicons name={active ? tab.iconActive : tab.icon} size={22} color={active ? Colors.primary : Colors.textMuted} />
+      <Ionicons name={active ? tab.iconActive : tab.icon} size={22} color={active ? Colors.text : Colors.textMuted} />
       <Text style={[styles.label, active && styles.labelActive]}>{tab.label}</Text>
     </Pressable>
   );
@@ -67,8 +67,8 @@ const styles = StyleSheet.create({
   wrap: {
     backgroundColor: Colors.surface,
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    paddingTop: 8,
+    borderTopColor: Colors.borderLight,
+    paddingTop: Spacing.sm,
   },
   row: {
     minHeight: Layout.tabBarHeight - 8,
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
   },
   labelActive: {
-    color: Colors.primary,
+    color: Colors.text,
     fontWeight: '700',
   },
   fabSlot: {

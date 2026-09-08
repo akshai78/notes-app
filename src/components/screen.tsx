@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Colors, Layout } from '@/constants/theme';
+import { Colors, Layout, Spacing } from '@/constants/theme';
 import { useResponsive } from '@/hooks/use-responsive';
 
 export function Screen({ children }: { children: ReactNode }) {
@@ -13,7 +13,7 @@ export function Screen({ children }: { children: ReactNode }) {
     <View
       style={[
         styles.root,
-        { paddingTop: showSidebar ? 12 : insets.top },
+        { paddingTop: showSidebar ? Spacing.md : insets.top },
       ]}>
       <View style={styles.inner}>{children}</View>
     </View>

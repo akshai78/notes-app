@@ -6,8 +6,7 @@ export function Logo({ compact = false }: { compact?: boolean }) {
   return (
     <View style={styles.row}>
       <View style={styles.mark}>
-        <View style={styles.dotBack} />
-        <View style={styles.dotFront} />
+        <View style={styles.ring} />
       </View>
       {!compact ? <Text style={styles.word}>Code Red</Text> : null}
     </View>
@@ -18,36 +17,27 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
   },
   mark: {
-    width: 34,
-    height: 34,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dotBack: {
-    position: 'absolute',
-    width: 22,
-    height: 22,
+  ring: {
+    width: 28,
+    height: 28,
     borderRadius: Radius.pill,
-    backgroundColor: '#C9C2FF',
-    left: 2,
-    top: 8,
-  },
-  dotFront: {
-    width: 22,
-    height: 22,
-    borderRadius: Radius.pill,
-    backgroundColor: Colors.primary,
-    borderWidth: 2,
-    borderColor: Colors.bg,
+    borderWidth: 3,
+    borderColor: Colors.text,
   },
   word: {
     fontFamily: Fonts.bold,
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '800',
     color: Colors.text,
-    letterSpacing: -0.4,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
   },
 });

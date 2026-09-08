@@ -4,15 +4,13 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Logo } from '@/components/logo';
-import { Colors, Fonts, Layout, Radius } from '@/constants/theme';
-import { useNotes } from '@/context/notes-context';
+import { AccentDots, Colors, Fonts, Layout, Radius, Spacing } from '@/constants/theme';
 import { tap } from '@/lib/haptics';
 
 const ITEMS: { href: string; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { href: '/', label: 'Notes', icon: 'document-text-outline' },
   { href: '/calendar', label: 'Calendar', icon: 'calendar-outline' },
   { href: '/archive', label: 'Archive', icon: 'archive-outline' },
-  { href: '/profile', label: 'Profile', icon: 'person-outline' },
+  { href: '/archive', label: 'Trash', icon: 'trash-outline' },
 ];
 
 type Props = {
@@ -23,66 +21,69 @@ export function Sidebar({ onCreate }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { profile, activeNotes, archivedNotes, trashedNotes } = useNotes();
-  const initials = profile.name
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
-
-  const counts: Record<string, number> = {
-    '/': activeNotes.length,
-    '/archive': archivedNotes.length + trashedNotes.length,
-  };
 
   return (
-    <View style={[styles.wrap, { paddingTop: insets.top + 18, paddingBottom: insets.bottom + 16 }]}>
+    <View style={[styles.wrap, { paddingTop: insets.top + Spacing.lg, paddingBottom: insets.bottom + Spacing.lg }]}>
       <Logo />
-      <Pressable
-        onPress={() => {
-          tap();
-          onCreate();
-        }}
-        style={({ pressed }) => [styles.add, pressed && { opacity: 0.88 }]}>
-        <Ionicons name="add" size={18} color="#fff" />
+
+      <View style={styles.addSection}>
         <Text style={styles.addLabel}>Add new</Text>
-      </Pressable>
+        <View style={styles.dots}>
+          <Pressable
+            onPress={() => {
+              tap();
+              onCreate();
+            }}
+            style={[styles.dot, { backgroundColor: AccentDots.yellow }]}
+          />
+          <Pressable
+            onPress={() => {
+              tap();
+              onCreate();
+            }}
+            style={[styles.dot, { backgroundColor: AccentDots.blue }]}
+          />
+          <Pressable
+            onPress={() => {
+              tap();
+              onCreate();
+            }}
+            style={[styles.dot, { backgroundColor: AccentDots.red }]}
+          />
+        </View>
+      </View>
 
       <View style={styles.menu}>
+        <Pressable
+          onPress={() => router.push('/')}
+          style={[styles.item, pathname === '/' && styles.itemActive]}>
+          <Ionicons name="document-text-outline" size={20} color={pathname === '/' ? Colors.text : Colors.textSoft} />
+          <Text style={[styles.itemLabel, pathname === '/' && styles.itemLabelActive]}>Notes</Text>
+        </Pressable>
         {ITEMS.map((item) => {
-          const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
+          const active = pathname.startsWith(item.href) && item.label !== 'Trash';
           return (
             <Pressable
-              key={item.href}
+              key={item.label}
               onPress={() => router.push(item.href as never)}
               style={[styles.item, active && styles.itemActive]}>
-              <Ionicons name={item.icon} size={18} color={active ? Colors.primary : Colors.textSoft} />
+              <Ionicons name={item.icon} size={20} color={active ? Colors.text : Colors.textSoft} />
               <Text style={[styles.itemLabel, active && styles.itemLabelActive]}>{item.label}</Text>
-              {counts[item.href] ? (
-                <View style={[styles.badge, active && styles.badgeActive]}>
-                  <Text style={[styles.badgeText, active && styles.badgeTextActive]}>{counts[item.href]}</Text>
-                </View>
-              ) : null}
             </Pressable>
           );
         })}
       </View>
 
       <View style={styles.spacer} />
-      <Pressable onPress={() => router.push('/profile')} style={styles.profile}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials || 'M'}</Text>
+
+      <View style={styles.proCard}>
+        <View style={styles.proIllustration}>
+          <Ionicons name="sparkles-outline" size={28} color={Colors.textSoft} />
         </View>
-        <View style={{ flex: 1 }}>
-          <Text numberOfLines={1} style={styles.profileName}>
-            {profile.name}
-          </Text>
-          <Text numberOfLines={1} style={styles.profileEmail}>
-            {profile.email}
-          </Text>
-        </View>
-      </Pressable>
+        <Pressable style={({ pressed }) => [styles.proBtn, pressed && { opacity: 0.9 }]}>
+          <Text style={styles.proBtnText}>Upgrade pro</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -92,36 +93,39 @@ const styles = StyleSheet.create({
     width: Layout.sidebarWidth,
     backgroundColor: Colors.surface,
     borderRightWidth: 1,
-    borderRightColor: Colors.border,
-    paddingHorizontal: 18,
+    borderRightColor: Colors.borderLight,
+    paddingHorizontal: Spacing.lg,
   },
-  add: {
-    marginTop: 22,
-    height: 46,
-    borderRadius: Radius.pill,
-    backgroundColor: Colors.ink,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
+  addSection: {
+    marginTop: Spacing.xl,
+    gap: Spacing.sm,
   },
   addLabel: {
-    color: '#fff',
-    fontFamily: Fonts.bold,
-    fontWeight: '700',
-    fontSize: 15,
+    fontFamily: Fonts.medium,
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.textSoft,
+  },
+  dots: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  dot: {
+    width: 14,
+    height: 14,
+    borderRadius: Radius.pill,
   },
   menu: {
-    marginTop: 28,
-    gap: 6,
+    marginTop: Spacing.xl,
+    gap: Spacing.xs,
   },
   item: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 12,
+    gap: Spacing.md,
+    paddingHorizontal: Spacing.sm,
     height: 44,
-    borderRadius: 14,
+    borderRadius: Radius.sm,
   },
   itemActive: {
     backgroundColor: Colors.primarySoft,
@@ -131,65 +135,42 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.medium,
     fontSize: 15,
     color: Colors.textSoft,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   itemLabelActive: {
     color: Colors.text,
-  },
-  badge: {
-    minWidth: 22,
-    height: 20,
-    borderRadius: 10,
-    paddingHorizontal: 6,
-    backgroundColor: Colors.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeActive: {
-    backgroundColor: Colors.surface,
-  },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.textMuted,
-  },
-  badgeTextActive: {
-    color: Colors.primary,
+    fontWeight: '600',
   },
   spacer: {
     flex: 1,
   },
-  profile: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    padding: 10,
-    borderRadius: 16,
+  proCard: {
+    borderRadius: Radius.lg,
     backgroundColor: Colors.bg,
+    padding: Spacing.lg,
+    alignItems: 'center',
+    gap: Spacing.md,
   },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.primary,
+  proIllustration: {
+    width: 64,
+    height: 64,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: {
+  proBtn: {
+    width: '100%',
+    height: 40,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  proBtnText: {
     color: '#fff',
-    fontWeight: '800',
-    fontSize: 12,
-  },
-  profileName: {
     fontFamily: Fonts.semibold,
-    fontWeight: '700',
-    color: Colors.text,
+    fontWeight: '600',
     fontSize: 13,
-  },
-  profileEmail: {
-    fontFamily: Fonts.regular,
-    color: Colors.textMuted,
-    fontSize: 11,
-    marginTop: 1,
   },
 });

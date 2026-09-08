@@ -1,24 +1,26 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Colors, Fonts } from '@/constants/theme';
+import { Colors, Fonts, Spacing, Typography } from '@/constants/theme';
 import type { DateFilter } from '@/lib/types';
 
 const OPTIONS: { id: DateFilter; label: string }[] = [
-  { id: 'today', label: 'Today' },
+  { id: 'today', label: 'Todays' },
   { id: 'week', label: 'This Week' },
   { id: 'month', label: 'This Month' },
-  { id: 'all', label: 'All' },
 ];
 
 type Props = {
   value: DateFilter;
   onChange: (value: DateFilter) => void;
+  includeAll?: boolean;
 };
 
-export function FilterTabs({ value, onChange }: Props) {
+export function FilterTabs({ value, onChange, includeAll = false }: Props) {
+  const options = includeAll ? [...OPTIONS, { id: 'all' as DateFilter, label: 'All' }] : OPTIONS;
+
   return (
     <View style={styles.row}>
-      {OPTIONS.map((option) => {
+      {options.map((option) => {
         const active = option.id === value;
         return (
           <Pressable key={option.id} onPress={() => onChange(option.id)} style={styles.item}>
@@ -35,28 +37,28 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 16,
+    gap: Spacing.lg,
   },
   item: {
-    paddingBottom: 4,
+    paddingBottom: Spacing.xs,
   },
   label: {
     fontFamily: Fonts.medium,
-    fontSize: 13,
+    fontSize: Typography.tab.fontSize,
     color: Colors.textMuted,
-    fontWeight: '500',
+    fontWeight: Typography.tab.fontWeight,
   },
   labelActive: {
     color: Colors.text,
     fontWeight: '700',
   },
   underline: {
-    marginTop: 6,
-    height: 3,
+    marginTop: Spacing.sm,
+    height: 2,
     borderRadius: 99,
     backgroundColor: 'transparent',
   },
   underlineActive: {
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.ink,
   },
 });

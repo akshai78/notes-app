@@ -15,7 +15,7 @@ export function EmptyState({ icon, title, body, actionLabel, onAction }: Props) 
   return (
     <View style={styles.wrap}>
       <View style={styles.icon}>
-        <Ionicons name={icon} size={28} color={Colors.primary} />
+        <Ionicons name={icon} size={28} color={Colors.textSoft} />
       </View>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.body}>{body}</Text>

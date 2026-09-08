@@ -4,25 +4,25 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ActionSheet, type ActionItem } from '@/components/action-sheet';
+import { AppHeader } from '@/components/app-header';
 import { FilterTabs } from '@/components/filter-tabs';
 import { FolderCard, NewFolderCard } from '@/components/folder-card';
+import { MonthNavigator } from '@/components/month-navigator';
 import { NewNoteCard, NoteCard } from '@/components/note-card';
 import { PromptModal } from '@/components/prompt-modal';
 import { QuickCapture } from '@/components/quick-capture';
 import { Screen } from '@/components/screen';
-import { SearchBar } from '@/components/search-bar';
 import { EmptyState } from '@/components/empty-state';
-import { Colors, Fonts, Layout, Radius } from '@/constants/theme';
+import { Colors, Fonts, Layout, Spacing, Typography } from '@/constants/theme';
 import { useNotes } from '@/context/notes-context';
 import { useResponsive } from '@/hooks/use-responsive';
-import { formatCardDate, greetingForNow, matchesFilter } from '@/lib/dates';
+import { matchesFilter, startOfMonth } from '@/lib/dates';
 import { openNewNote, titleFromText } from '@/lib/notes-actions';
 import { success, tap } from '@/lib/haptics';
 import type { DateFilter, Folder } from '@/lib/types';
 
 export default function HomeScreen() {
   const {
-    profile,
     folders,
     activeNotes,
     notesInFolder,
@@ -38,34 +38,37 @@ export default function HomeScreen() {
   } = useNotes();
   const { columns, folderCardWidth, contentPad, noteGap, showSidebar, width } = useResponsive();
   const [query, setQuery] = useState('');
-  const [folderFilter, setFolderFilter] = useState<DateFilter>('all');
-  const [noteFilter, setNoteFilter] = useState<DateFilter>('all');
+  const [folderFilter, setFolderFilter] = useState<DateFilter>('week');
+  const [noteFilter, setNoteFilter] = useState<DateFilter>('week');
+  const [noteMonth, setNoteMonth] = useState(() => new Date());
   const [folderModal, setFolderModal] = useState(false);
   const [renameTarget, setRenameTarget] = useState<Folder | null>(null);
   const [sheet, setSheet] = useState<{ type: 'note' | 'folder' | 'move'; id: string } | null>(null);
   const [savedFlash, setSavedFlash] = useState(false);
-
-  const initials = profile.name
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
 
   const visibleFolders = useMemo(
     () => folders.filter((folder) => matchesFilter(folder.createdAt, folderFilter)),
     [folders, folderFilter]
   );
 
+  const monthStart = startOfMonth(noteMonth);
+
   const searched = useMemo(() => {
     const q = query.trim().toLowerCase();
     return activeNotes.filter((note) => {
-      if (!matchesFilter(note.datedAt ?? note.updatedAt, noteFilter) && !q) return false;
-      if (!q) return true;
+      const noteDate = note.datedAt ?? note.updatedAt;
+      if (!q) {
+        if (!matchesFilter(noteDate, noteFilter)) return false;
+        if (noteFilter === 'month' || noteFilter === 'all') {
+          const noteMonthStart = startOfMonth(new Date(noteDate));
+          if (noteMonthStart !== monthStart) return false;
+        }
+        return true;
+      }
       const hay = `${note.title} ${note.body} ${note.tags.join(' ')}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [activeNotes, noteFilter, query]);
+  }, [activeNotes, noteFilter, noteMonth, monthStart, query]);
 
   const innerWidth = Math.min(width - (showSidebar ? Layout.sidebarWidth : 0), Layout.maxContent);
   const usable = Math.max(innerWidth - contentPad * 2, 280);
@@ -150,34 +153,17 @@ export default function HomeScreen() {
     })),
   ];
 
+  const shiftMonth = (delta: number) => {
+    setNoteMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
+  };
+
   return (
     <Screen>
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingHorizontal: contentPad, paddingBottom: 48 }]}
+        contentContainerStyle={[styles.content, { paddingHorizontal: contentPad, paddingBottom: Spacing.xxl }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
-        <View style={styles.hero}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.kicker}>{greetingForNow()}</Text>
-            <Text style={styles.hello}>Welcome, {profile.name}.</Text>
-            <Text style={styles.today}>{formatCardDate(Date.now())} · v1.1</Text>
-          </View>
-          <Pressable onPress={() => router.push('/profile')} style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials || 'M'}</Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.searchRow}>
-          <SearchBar value={query} onChange={setQuery} />
-          {showSidebar ? (
-            <Pressable
-              onPress={() => openNewNote(createNote)}
-              style={({ pressed }) => [styles.create, pressed && { opacity: 0.88 }]}>
-              <Ionicons name="add" size={16} color="#fff" />
-              <Text style={styles.createLabel}>Create note</Text>
-            </Pressable>
-          ) : null}
-        </View>
+        <AppHeader title="My notes" search={query} onSearchChange={setQuery} />
 
         <QuickCapture
           onSubmit={capture}
@@ -194,10 +180,8 @@ export default function HomeScreen() {
 
         {!query ? (
           <View style={styles.section}>
-            <View style={styles.sectionHead}>
-              <Text style={styles.sectionTitle}>Recent folders</Text>
-              <FilterTabs value={folderFilter} onChange={setFolderFilter} />
-            </View>
+            <Text style={styles.sectionTitle}>Recent folders</Text>
+            <FilterTabs value={folderFilter} onChange={setFolderFilter} />
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -218,10 +202,17 @@ export default function HomeScreen() {
         ) : null}
 
         <View style={styles.section}>
-          <View style={styles.sectionHead}>
+          <View style={styles.sectionHeadRow}>
             <Text style={styles.sectionTitle}>{query ? 'Results' : 'My notes'}</Text>
-            {!query ? <FilterTabs value={noteFilter} onChange={setNoteFilter} /> : null}
+            {!query ? (
+              <MonthNavigator
+                date={noteMonth}
+                onPrev={() => shiftMonth(-1)}
+                onNext={() => shiftMonth(1)}
+              />
+            ) : null}
           </View>
+          {!query ? <FilterTabs value={noteFilter} onChange={setNoteFilter} includeAll /> : null}
 
           {searched.length === 0 && query ? (
             <EmptyState
@@ -291,98 +282,42 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    paddingTop: 8,
-    gap: 16,
-  },
-  hero: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    paddingTop: 8,
-  },
-  kicker: {
-    fontFamily: Fonts.medium,
-    fontSize: 13,
-    color: Colors.primary,
-    fontWeight: '700',
-  },
-  hello: {
-    fontFamily: Fonts.bold,
-    fontSize: 26,
-    fontWeight: '800',
-    color: Colors.text,
-    letterSpacing: -0.6,
-    marginTop: 2,
-  },
-  today: {
-    marginTop: 4,
-    fontFamily: Fonts.regular,
-    color: Colors.textMuted,
-    fontSize: 13,
-  },
-  avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    color: '#fff',
-    fontWeight: '800',
-  },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  create: {
-    height: 48,
-    paddingHorizontal: 16,
-    borderRadius: Radius.pill,
-    backgroundColor: Colors.ink,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  createLabel: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
+    paddingTop: Spacing.sm,
+    gap: Spacing.xl,
   },
   flash: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginTop: -6,
+    gap: Spacing.xs,
+    marginTop: -Spacing.sm,
   },
   flashText: {
     color: Colors.success,
-    fontWeight: '700',
-    fontSize: 13,
+    fontWeight: '600',
+    fontSize: Typography.caption.fontSize,
   },
   section: {
-    gap: 14,
-    marginTop: 8,
+    gap: Spacing.md,
   },
-  sectionHead: {
-    gap: 10,
+  sectionHeadRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   sectionTitle: {
     fontFamily: Fonts.bold,
-    fontSize: 20,
-    fontWeight: '800',
+    fontSize: Typography.section.fontSize,
+    fontWeight: Typography.section.fontWeight,
+    lineHeight: Typography.section.lineHeight,
     color: Colors.text,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
   },
   folderRow: {
-    gap: 12,
-    paddingVertical: 2,
+    gap: Spacing.md,
+    paddingVertical: Spacing.xs,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    marginTop: Spacing.sm,
   },
 });
