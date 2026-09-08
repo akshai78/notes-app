@@ -62,19 +62,34 @@ Use **[EAS Build](https://docs.expo.dev/build/introduction/)** (Expo’s cloud b
 
    `eas init` links this repo to your Expo project and adds a project ID to `app.json`.
 
-### Android — installable APK
+### Android — installable APK (Code Red 1.1)
 
-Build an APK you can sideload on any Android phone:
+**Download:** [CodeRed-1.1.apk](https://github.com/akshai78/notes-app/releases/latest/download/CodeRed-1.1.apk) from GitHub Releases.
 
-```bash
-npm run build:android
-```
+On your phone:
 
-When the build finishes, open the link EAS prints (or [expo.dev](https://expo.dev) → your project → **Builds**) and download the **`.apk`**. On the phone:
-
-1. Transfer the APK (download link, email, or USB).
+1. Download the APK.
 2. Open it and allow **Install from unknown sources** if Android asks.
 3. Install **Code Red**.
+
+**Build your own APK (cloud, recommended):**
+
+```bash
+npm install
+npx eas login
+npx eas init
+npm run build:apk
+```
+
+EAS prints a download link when the build finishes (~10 minutes).
+
+**Build locally (needs Android SDK + Java 17):**
+
+```bash
+npm run build:apk:local
+```
+
+Output: `releases/CodeRed-1.1.apk`
 
 For Google Play later, use `npm run build:android:store` (AAB format).
 

@@ -38,6 +38,8 @@ yarn-error.*
 
 example
 assets/*.jpg
+releases/*.apk
+/android
 
 # generated native folders
 /ios
