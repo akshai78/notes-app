@@ -160,7 +160,7 @@ export default function HomeScreen() {
           <View style={{ flex: 1 }}>
             <Text style={styles.kicker}>{greetingForNow()}</Text>
             <Text style={styles.hello}>Welcome, {profile.name}.</Text>
-            <Text style={styles.today}>{formatCardDate(Date.now())}</Text>
+            <Text style={styles.today}>{formatCardDate(Date.now())} · v1.0.1</Text>
           </View>
           <Pressable onPress={() => router.push('/profile')} style={styles.avatar}>
             <Text style={styles.avatarText}>{initials || 'M'}</Text>
