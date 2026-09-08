@@ -73,17 +73,6 @@ export function Sidebar({ onCreate }: Props) {
           );
         })}
       </View>
-
-      <View style={styles.spacer} />
-
-      <View style={styles.proCard}>
-        <View style={styles.proIllustration}>
-          <Ionicons name="sparkles-outline" size={28} color={Colors.textSoft} />
-        </View>
-        <Pressable style={({ pressed }) => [styles.proBtn, pressed && { opacity: 0.9 }]}>
-          <Text style={styles.proBtnText}>Upgrade pro</Text>
-        </Pressable>
-      </View>
     </View>
   );
 }
@@ -140,37 +129,5 @@ const styles = StyleSheet.create({
   itemLabelActive: {
     color: Colors.text,
     fontWeight: '600',
-  },
-  spacer: {
-    flex: 1,
-  },
-  proCard: {
-    borderRadius: Radius.lg,
-    backgroundColor: Colors.bg,
-    padding: Spacing.lg,
-    alignItems: 'center',
-    gap: Spacing.md,
-  },
-  proIllustration: {
-    width: 64,
-    height: 64,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  proBtn: {
-    width: '100%',
-    height: 40,
-    borderRadius: Radius.pill,
-    backgroundColor: Colors.ink,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  proBtnText: {
-    color: '#fff',
-    fontFamily: Fonts.semibold,
-    fontWeight: '600',
-    fontSize: 13,
   },
 });
