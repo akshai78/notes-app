@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { EmptyState } from '@/components/empty-state';
@@ -19,10 +19,7 @@ export default function CalendarScreen() {
   const { columns, contentPad, noteGap, showSidebar, width } = useResponsive();
   const selected = selectedCalendarDay ?? startOfDay();
   const [cursor, setCursor] = useState(() => new Date(selected));
-
-  useEffect(() => {
-    if (selectedCalendarDay == null) setActiveCalendarDay(startOfDay());
-  }, [selectedCalendarDay, setActiveCalendarDay]);
+  const [todayStart] = useState(() => startOfDay());
 
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
@@ -31,15 +28,12 @@ export default function CalendarScreen() {
     setActiveCalendarDay(startOfDay(new Date(year, month, day)));
   };
 
-  const first = new Date(year, month, 1);
-  const startWeekday = (first.getDay() + 6) % 7;
+  const firstOfMonth = new Date(year, month, 1);
+  const startWeekday = (firstOfMonth.getDay() + 6) % 7;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const cells = useMemo(() => {
-    const list: (number | null)[] = Array.from({ length: startWeekday }, () => null);
-    for (let day = 1; day <= daysInMonth; day += 1) list.push(day);
-    while (list.length % 7 !== 0) list.push(null);
-    return list;
-  }, [daysInMonth, startWeekday]);
+  const cells: (number | null)[] = Array.from({ length: startWeekday }, () => null);
+  for (let day = 1; day <= daysInMonth; day += 1) cells.push(day);
+  while (cells.length % 7 !== 0) cells.push(null);
 
   const notesByDay = useMemo(() => {
     const map = new Map<string, number>();
@@ -92,7 +86,7 @@ export default function CalendarScreen() {
             if (!day) return <View key={`e-${index}`} style={styles.cell} />;
             const key = startOfDay(new Date(year, month, day));
             const active = sameDay(key, selected);
-            const today = sameDay(key, Date.now());
+            const today = sameDay(key, todayStart);
             const count = notesByDay.get(String(key)) ?? 0;
             return (
               <Pressable

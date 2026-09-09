@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ActionSheet, type ActionItem } from '@/components/action-sheet';
 import { AppHeader } from '@/components/app-header';
@@ -68,7 +68,7 @@ export default function HomeScreen() {
       const hay = `${note.title} ${note.body} ${note.tags.join(' ')}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [activeNotes, noteFilter, noteMonth, monthStart, query]);
+  }, [activeNotes, noteFilter, monthStart, query]);
 
   const innerWidth = Math.min(width - (showSidebar ? Layout.sidebarWidth : 0), Layout.maxContent);
   const usable = Math.max(innerWidth - contentPad * 2, 280);

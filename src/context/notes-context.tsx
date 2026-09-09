@@ -71,7 +71,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile>(seedState.profile);
   const persistTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const calendarDayRef = useRef<number | null>(null);
-  const [selectedCalendarDay, setSelectedCalendarDay] = useState<number | null>(null);
+  const [selectedCalendarDay, setSelectedCalendarDay] = useState<number | null>(() => startOfDay());
 
   const setActiveCalendarDay = useCallback((day: number | null) => {
     const next = day == null ? null : startOfDay(new Date(day));

@@ -1,5 +1,4 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { EmptyState } from '@/components/empty-state';
@@ -17,14 +16,9 @@ export default function ArchiveScreen() {
   const { archivedNotes, trashedNotes, createNote, unarchiveNote, restoreNote, permanentlyDelete, emptyTrash, toggleCheckItem } =
     useNotes();
   const { pane: paneParam } = useLocalSearchParams<{ pane?: string }>();
-  const [pane, setPane] = useState<Pane>(paneParam === 'trash' ? 'trash' : 'archive');
-
-  useEffect(() => {
-    setPane(paneParam === 'trash' ? 'trash' : 'archive');
-  }, [paneParam]);
+  const pane: Pane = paneParam === 'trash' ? 'trash' : 'archive';
 
   const selectPane = (next: Pane) => {
-    setPane(next);
     router.replace(next === 'trash' ? '/archive?pane=trash' : '/archive');
   };
   const { columns, contentPad, noteGap, showSidebar, width } = useResponsive();

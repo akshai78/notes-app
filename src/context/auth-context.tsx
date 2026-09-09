@@ -20,10 +20,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
 
   useEffect(() => {
-    if (!supabase) {
-      setReady(true);
-      return;
-    }
+    if (!supabase) return;
 
     let mounted = true;
     supabase.auth.getSession().then(({ data }) => {

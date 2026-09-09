@@ -1,4 +1,4 @@
-import type { Note, NoteColorId } from '@/lib/types';
+import type { NoteColorId } from '@/lib/types';
 
 export type NoteDraft = {
   datedAt: number;

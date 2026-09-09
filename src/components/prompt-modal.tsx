@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
@@ -23,8 +23,9 @@ type Props = {
   onSubmit: (value: string) => void;
 };
 
-export function PromptModal({
-  visible,
+type FormProps = Omit<Props, 'visible'>;
+
+function PromptForm({
   title,
   message,
   placeholder,
@@ -32,12 +33,8 @@ export function PromptModal({
   initialValue = '',
   onClose,
   onSubmit,
-}: Props) {
+}: FormProps) {
   const [value, setValue] = useState(initialValue);
-
-  useEffect(() => {
-    if (visible) setValue(initialValue);
-  }, [visible, initialValue]);
 
   const submit = () => {
     const next = value.trim();
@@ -47,32 +44,38 @@ export function PromptModal({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.overlay}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <View style={styles.sheet}>
-          <Text style={styles.title}>{title}</Text>
-          {message ? <Text style={styles.message}>{message}</Text> : null}
-          <TextInput
-            value={value}
-            onChangeText={setValue}
-            placeholder={placeholder}
-            placeholderTextColor={Colors.textMuted}
-            style={styles.input}
-            autoFocus
-            onSubmitEditing={submit}
-            returnKeyType="done"
-          />
-          <View style={styles.actions}>
-            <Pressable onPress={onClose} style={styles.ghost}>
-              <Text style={styles.ghostLabel}>Cancel</Text>
-            </Pressable>
-            <Pressable onPress={submit} style={styles.primary}>
-              <Text style={styles.primaryLabel}>{confirmLabel}</Text>
-            </Pressable>
-          </View>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.overlay}>
+      <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+      <View style={styles.sheet}>
+        <Text style={styles.title}>{title}</Text>
+        {message ? <Text style={styles.message}>{message}</Text> : null}
+        <TextInput
+          value={value}
+          onChangeText={setValue}
+          placeholder={placeholder}
+          placeholderTextColor={Colors.textMuted}
+          style={styles.input}
+          autoFocus
+          onSubmitEditing={submit}
+          returnKeyType="done"
+        />
+        <View style={styles.actions}>
+          <Pressable onPress={onClose} style={styles.ghost}>
+            <Text style={styles.ghostLabel}>Cancel</Text>
+          </Pressable>
+          <Pressable onPress={submit} style={styles.primary}>
+            <Text style={styles.primaryLabel}>{confirmLabel}</Text>
+          </Pressable>
         </View>
-      </KeyboardAvoidingView>
+      </View>
+    </KeyboardAvoidingView>
+  );
+}
+
+export function PromptModal({ visible, initialValue = '', title, ...rest }: Props) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={rest.onClose}>
+      {visible ? <PromptForm key={`${title}-${initialValue}`} title={title} initialValue={initialValue} {...rest} /> : null}
     </Modal>
   );
 }
