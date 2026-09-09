@@ -24,7 +24,7 @@ cd android
 chmod +x gradlew
 ./gradlew assembleDebug --no-daemon
 
-OUT="$ROOT/releases/CodeRed-1.1.apk"
+OUT="$ROOT/releases/CodeRed-1.2.apk"
 mkdir -p "$ROOT/releases"
 cp app/build/outputs/apk/debug/app-debug.apk "$OUT"
 echo "Done: $OUT"

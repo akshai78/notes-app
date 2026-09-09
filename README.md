@@ -22,7 +22,7 @@ The home screen is a pastel card board with folders, tags, and checklists. A jot
 
    After `git pull`, always run **`npm install`** once so new packages (like `@supabase/supabase-js`) are installed. The start scripts also auto-install if that package is missing.
 
-   That starts Code Red on port **47391** (not 8081 — 8081 is often another Expo app). The terminal must say `Starting project at .../notes-app` and `Web: http://localhost:47391`. Confirm the build on **You → Code Red 1.1**.
+   That starts Code Red on port **47391** (not 8081 — 8081 is often another Expo app). The terminal must say `Starting project at .../notes-app` and `Web: http://localhost:47391`. Confirm the build on **You → Code Red 1.2**.
 3. Open the project in Expo Go:
    - **iPhone:** scan the QR code with the Camera app, then open in Expo Go
    - **Android:** open Expo Go and scan the QR code there
@@ -72,9 +72,9 @@ Use **[EAS Build](https://docs.expo.dev/build/introduction/)** (Expo’s cloud b
 
    `eas init` links this repo to your Expo project and adds a project ID to `app.json`.
 
-### Android — installable APK (Code Red 1.1)
+### Android — installable APK (Code Red 1.2)
 
-**Download:** [CodeRed-1.1.apk](https://github.com/akshai78/notes-app/releases/latest/download/CodeRed-1.1.apk) from GitHub Releases.
+**Download:** [CodeRed-1.2.apk](https://github.com/akshai78/notes-app/releases/latest/download/CodeRed-1.2.apk) from GitHub Releases.
 
 On your phone:
 
@@ -99,7 +99,7 @@ EAS prints a download link when the build finishes (~10 minutes).
 npm run build:apk:local
 ```
 
-Output: `releases/CodeRed-1.1.apk`
+Output: `releases/CodeRed-1.2.apk`
 
 For Google Play later, use `npm run build:android:store` (AAB format).
 

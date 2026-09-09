@@ -103,7 +103,7 @@ export default function ProfileScreen() {
           Notes save on this device first. Guests can keep writing without an account. Sign out or leave guest mode
           from the card above to return to welcome.
         </Text>
-        <Text style={styles.version}>Code Red 1.1</Text>
+        <Text style={styles.version}>Code Red 1.2</Text>
       </ScrollView>
 
       <PromptModal
