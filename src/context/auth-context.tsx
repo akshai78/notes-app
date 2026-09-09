@@ -1,6 +1,9 @@
 import type { Session, User } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
+import * as Linking from 'expo-linking';
+
+import { authRedirectUrl, isAuthCallbackUrl, parseAuthCallback } from '@/lib/auth-redirect';
 import { loadGuest, saveGuest } from '@/lib/guest';
 import { allowApp, denyApp } from '@/lib/session-gate';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase/client';
@@ -109,6 +112,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!supabase) return;
+
+    const consumeUrl = async (url: string | null) => {
+      if (!isAuthCallbackUrl(url) || !url) return;
+      const { code, accessToken, refreshToken } = parseAuthCallback(url);
+      try {
+        if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) return;
+          allowApp();
+          await saveGuest(false);
+          return;
+        }
+        if (accessToken && refreshToken) {
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          if (error) return;
+          allowApp();
+          await saveGuest(false);
+        }
+      } catch {
+        // Ignore malformed or expired email links.
+      }
+    };
+
+    void Linking.getInitialURL().then(consumeUrl);
+    const sub = Linking.addEventListener('url', ({ url }) => {
+      void consumeUrl(url);
+    });
+    return () => sub.remove();
+  }, []);
+
   const signIn = useCallback(async (email: string, password: string) => {
     if (!supabase) return 'Cloud sync is not configured.';
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -121,9 +159,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = useCallback(async (email: string, password: string) => {
     if (!supabase) return 'Cloud sync is not configured.';
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: authRedirectUrl() },
+    });
     if (error) return authErrorMessage(error.message);
-    if (!data.session) return 'Account created. Confirm the email from Supabase, then sign in.';
+    if (!data.session) {
+      return 'Account created. Open the confirmation email on this phone and tap the link — it should open Code Red, not a browser.';
+    }
     allowApp();
     setGuest(false);
     await saveGuest(false);
@@ -133,7 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const resetPassword = useCallback(async (email: string) => {
     if (!supabase) return 'Cloud sync is not configured.';
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'codered://welcome',
+      redirectTo: authRedirectUrl(),
     });
     return authErrorMessage(error?.message);
   }, []);

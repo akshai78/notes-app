@@ -78,7 +78,13 @@ export default function WelcomeScreen() {
     setInfo(null);
     const error = mode === 'signup' ? await signUp(nextEmail, password) : await signIn(nextEmail, password);
     setBusy(false);
-    if (error) setMessage(error);
+    if (error) {
+      if (error.startsWith('Account created')) {
+        setInfo(error);
+        return;
+      }
+      setMessage(error);
+    }
   };
 
   const title =

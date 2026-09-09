@@ -22,7 +22,18 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": true,
-      "package": "app.codered.notes"
+      "package": "app.codered.notes",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": false,
+          "category": ["BROWSABLE", "DEFAULT"],
+          "data": [
+            { "scheme": "codered", "host": "welcome" },
+            { "scheme": "codered" }
+          ]
+        }
+      ]
     },
     "ios": {
       "icon": "./assets/expo.icon",

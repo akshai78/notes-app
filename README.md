@@ -55,6 +55,26 @@ This is an Expo app, so the client uses `@supabase/supabase-js` with AsyncStorag
 2. In the [Supabase SQL editor](https://supabase.com/dashboard/project/tdjderirryagsqjenosu/sql), run `supabase/schema.sql`.
 3. Launch the app. The first screen asks you to **Sign in**, **Create account**, or **Continue as guest**. Sign-in also has show/hide password and **Forgot password?** (email reset). Sign out from **You** to return to welcome.
 
+### Confirmation email opens localhost
+
+Supabase defaults **Site URL** to `http://localhost:3000`. If that is still set — or if `codered://welcome` is missing from **Redirect URLs** — the Confirm link opens a browser on localhost instead of Code Red.
+
+Fix it in [Authentication → URL configuration](https://supabase.com/dashboard/project/tdjderirryagsqjenosu/auth/url-configuration):
+
+| Field | Value |
+|--------|--------|
+| **Site URL** | `codered://welcome` |
+| **Redirect URLs** | `codered://welcome` |
+| | `codered://**` |
+| | `exp://**` (Expo Go only) |
+| | `http://localhost:47391/**` (web / Expo only) |
+
+Save, then request a **new** confirmation or reset email. Old messages still point at localhost.
+
+The email template must use `{{ .ConfirmationURL }}` (or `{{ .ConfirmationURL }}` / `{{ .TokenHash }}` links), not a hard-coded `{{ .SiteURL }}` localhost page.
+
+After you tap Confirm on the phone, Code Red should open and finish sign-in. If the app is not installed, Android/iOS cannot handle `codered://` and the link will fail — install the APK first.
+
 ## Installable Android & iOS apps
 
 Use **[EAS Build](https://docs.expo.dev/build/introduction/)** (Expo’s cloud build service) to create files you can install without Expo Go.
