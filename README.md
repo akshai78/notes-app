@@ -84,16 +84,20 @@ On your phone:
 2. Open it and allow **Install from unknown sources** if Android asks.
 3. Install **Code Red**.
 
-**Build your own APK (cloud, recommended):**
+**EAS cloud APK (use this — local debug APKs have been unreliable):**
+
+On your Mac, in `notes-app` (you are already linked as `akshai78` / project `code-red`):
 
 ```bash
+git pull origin main
 npm install
 npx eas login
-npx eas init
-npm run build:apk
+npx eas build --platform android --profile preview
 ```
 
-EAS prints a download link when the build finishes (~10 minutes).
+When Expo asks, confirm the Android package `app.codered.notes`. The build runs in the cloud (~10–20 minutes). Open the URL EAS prints, then **Download** the APK.
+
+Or watch it here: https://expo.dev/accounts/akshai78/projects/code-red/builds
 
 **Build locally (needs Android SDK + Java 17):**
 
