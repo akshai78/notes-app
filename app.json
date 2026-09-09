@@ -7,6 +7,12 @@
     "icon": "./assets/images/icon.png",
     "scheme": "codered",
     "userInterfaceStyle": "light",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/89faeb7d-74d9-407a-a803-b344202bcd0f"
+    },
     "android": {
       "versionCode": 6,
       "adaptiveIcon": {
@@ -33,6 +39,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-updates",
       [
         "expo-splash-screen",
         {

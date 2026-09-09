@@ -95,6 +95,8 @@ npx eas login
 npx eas build --platform android --profile preview
 ```
 
+If EAS says **Command must be re-run to pick up new updates configuration**, that first run only installed `expo-updates`. Pull this repo, then run the same `eas build` command **again**. The second run is the real APK.
+
 When Expo asks, confirm the Android package `app.codered.notes`. The build runs in the cloud (~10–20 minutes). Open the URL EAS prints, then **Download** the APK.
 
 Or watch it here: https://expo.dev/accounts/akshai78/projects/code-red/builds
