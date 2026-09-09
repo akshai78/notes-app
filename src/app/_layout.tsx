@@ -6,6 +6,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { Colors } from '@/constants/theme';
+import { AuthProvider } from '@/context/auth-context';
 import { NotesProvider, useNotes } from '@/context/notes-context';
 
 function RootNav() {
@@ -35,9 +36,11 @@ function RootNav() {
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <NotesProvider>
-        <RootNav />
-      </NotesProvider>
+      <AuthProvider>
+        <NotesProvider>
+          <RootNav />
+        </NotesProvider>
+      </AuthProvider>
     </GestureHandlerRootView>
   );
 }

@@ -45,6 +45,14 @@ npm run web
 
 Notes, folders, and profile live on the device (AsyncStorage). Use **Restore sample notes** on the profile screen to reset the starter set.
 
+## Cloud sync (Supabase)
+
+This is an Expo app, so the client uses `@supabase/supabase-js` with AsyncStorage sessions — not the Next.js cookie/middleware helpers.
+
+1. Copy `.env.example` to `.env` (already set for this project).
+2. In the [Supabase SQL editor](https://supabase.com/dashboard/project/tdjderirryagsqjenosu/sql), run `supabase/schema.sql`.
+3. On **You**, create an account or sign in. Notes stay local until the sync engine is turned on; the session is already persisted.
+
 ## Installable Android & iOS apps
 
 Use **[EAS Build](https://docs.expo.dev/build/introduction/)** (Expo’s cloud build service) to create files you can install without Expo Go.

@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { CloudAccount } from '@/components/cloud-account';
 import { PromptModal } from '@/components/prompt-modal';
 import { Screen } from '@/components/screen';
 import { Colors, Fonts, Radius, Shadow } from '@/constants/theme';
@@ -44,6 +45,8 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}>
         <Text style={styles.kicker}>Account</Text>
         <Text style={styles.title}>You</Text>
+
+        <CloudAccount />
 
         <View style={[styles.card, Shadow.card]}>
           <View style={styles.avatar}>
@@ -97,8 +100,8 @@ export default function ProfileScreen() {
         </Pressable>
 
         <Text style={styles.about}>
-          Code Red keeps every note on this device. Capture from the black plus button, or type into the jot bar and
-          hit save — no extra screens required.
+          Notes still save on this device first. Sign in under Cloud sync to attach this copy to your Supabase
+          account. Capture from the plus button or the jot bar — no extra screens required.
         </Text>
         <Text style={styles.version}>Code Red 1.1</Text>
       </ScrollView>
