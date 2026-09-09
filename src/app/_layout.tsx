@@ -1,6 +1,6 @@
 import '@/global.css';
 
-import { Redirect, Stack, usePathname } from 'expo-router';
+import { Stack, usePathname, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
@@ -11,19 +11,27 @@ import { UpdateAvailable } from '@/components/update-available';
 import { Colors } from '@/constants/theme';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { NotesProvider, useNotes } from '@/context/notes-context';
+import { isAppAllowed } from '@/lib/session-gate';
 
 void SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 function RootNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const { ready: authReady, user, guest, configured } = useAuth();
   const { ready: notesReady } = useNotes();
   const booted = authReady && notesReady;
-  const needsWelcome = configured && !user && !guest && pathname !== '/welcome';
+  const canEnter = Boolean(user || guest || isAppAllowed());
+  const needsWelcome = configured && !canEnter && pathname !== '/welcome';
 
   useEffect(() => {
     if (booted) void SplashScreen.hideAsync().catch(() => undefined);
   }, [booted]);
+
+  useEffect(() => {
+    if (!booted || !needsWelcome) return;
+    router.replace('/welcome');
+  }, [booted, needsWelcome, router]);
 
   if (!booted) {
     return (
@@ -43,8 +51,7 @@ function RootNav() {
         <Stack.Screen name="note/[id]" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="folder/[id]" options={{ animation: 'slide_from_right' }} />
       </Stack>
-      {needsWelcome ? <Redirect href="/welcome" /> : null}
-      <UpdateAvailable enabled={pathname !== '/welcome'} />
+      <UpdateAvailable enabled={canEnter && pathname !== '/welcome'} />
     </>
   );
 }

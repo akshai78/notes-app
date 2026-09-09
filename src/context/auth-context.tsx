@@ -2,6 +2,7 @@ import type { Session, User } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { loadGuest, saveGuest } from '@/lib/guest';
+import { allowApp, denyApp } from '@/lib/session-gate';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase/client';
 
 function authErrorMessage(message?: string | null): string | null {
@@ -58,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const finish = (nextGuest: boolean, nextSession: Session | null) => {
       if (!mounted) return;
+      if (nextGuest || nextSession) allowApp();
       setGuest(nextGuest);
       setSession(nextSession);
       setReady(true);
@@ -95,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data } = supabase.auth.onAuthStateChange((_event, next) => {
       setSession(next);
       if (next) {
+        allowApp();
         setGuest(false);
         void saveGuest(false);
       }
@@ -110,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabase) return 'Cloud sync is not configured.';
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return authErrorMessage(error.message);
+    allowApp();
     setGuest(false);
     await saveGuest(false);
     return null;
@@ -120,6 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) return authErrorMessage(error.message);
     if (!data.session) return 'Account created. Confirm the email from Supabase, then sign in.';
+    allowApp();
     setGuest(false);
     await saveGuest(false);
     return null;
@@ -134,16 +139,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const continueAsGuest = useCallback(async () => {
+    allowApp();
     setGuest(true);
     await saveGuest(true);
   }, []);
 
   const leaveGuest = useCallback(async () => {
+    denyApp();
     setGuest(false);
     await saveGuest(false);
   }, []);
 
   const signOut = useCallback(async () => {
+    denyApp();
     setGuest(false);
     await saveGuest(false);
     if (!supabase) return null;

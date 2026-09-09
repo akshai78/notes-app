@@ -13,7 +13,7 @@ export type AppUpdate = {
 };
 
 export function currentAppVersion(): string {
-  return Constants.expoConfig?.version ?? '1.2.2';
+  return Constants.expoConfig?.version ?? '1.2.3';
 }
 
 export function compareVersions(a: string, b: string): number {
