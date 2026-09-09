@@ -41,9 +41,10 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
-    "start": "expo start --go --clear --port 47391",
-    "start:lan": "expo start --go --lan --clear --port 47391",
-    "start:tunnel": "expo start --go --tunnel --clear --port 47391",
+    "ensure": "bash scripts/ensure-deps.sh",
+    "start": "bash scripts/ensure-deps.sh && expo start --go --clear --port 47391",
+    "start:lan": "bash scripts/ensure-deps.sh && expo start --go --lan --clear --port 47391",
+    "start:tunnel": "bash scripts/ensure-deps.sh && expo start --go --tunnel --clear --port 47391",
     "android": "expo start --android --port 47391",
     "ios": "expo start --ios --port 47391",
     "web": "expo start --web --port 47391",
