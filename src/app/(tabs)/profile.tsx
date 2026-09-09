@@ -100,8 +100,8 @@ export default function ProfileScreen() {
         </Pressable>
 
         <Text style={styles.about}>
-          Notes save on this device first. Sign out here to return to the welcome screen. Capture from the plus
-          button or the jot bar.
+          Notes save on this device first. Guests can keep writing without an account. Sign out or leave guest mode
+          from the card above to return to welcome.
         </Text>
         <Text style={styles.version}>Code Red 1.1</Text>
       </ScrollView>

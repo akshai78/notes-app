@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useState } from 'react';
 
@@ -6,11 +7,11 @@ import { Colors, Fonts, Radius, Shadow } from '@/constants/theme';
 import { useAuth } from '@/context/auth-context';
 
 export function CloudAccount() {
-  const { configured, ready, user, signOut } = useAuth();
+  const { configured, ready, user, guest, signOut, leaveGuest } = useAuth();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  if (!configured) {
+  if (!configured && !guest) {
     return (
       <View style={[styles.card, Shadow.card]}>
         <Text style={styles.title}>Cloud account</Text>
@@ -23,6 +24,33 @@ export function CloudAccount() {
     return (
       <View style={[styles.card, Shadow.card]}>
         <ActivityIndicator color={Colors.text} />
+      </View>
+    );
+  }
+
+  if (guest && !user) {
+    return (
+      <View style={[styles.card, Shadow.card]}>
+        <View style={styles.row}>
+          <View style={styles.icon}>
+            <Ionicons name="person-outline" size={18} color={Colors.text} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>Guest</Text>
+            <Text style={styles.body}>Notes stay on this device. Sign in anytime to attach an account.</Text>
+          </View>
+        </View>
+        <Pressable
+          disabled={busy}
+          onPress={async () => {
+            setBusy(true);
+            await leaveGuest();
+            setBusy(false);
+            router.replace('/welcome');
+          }}
+          style={({ pressed }) => [styles.button, pressed && { opacity: 0.85 }]}>
+          <Text style={styles.buttonLabel}>{busy ? 'Opening…' : 'Sign in or create account'}</Text>
+        </Pressable>
       </View>
     );
   }

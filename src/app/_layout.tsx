@@ -11,7 +11,7 @@ import { NotesProvider, useNotes } from '@/context/notes-context';
 
 function RootNav() {
   const pathname = usePathname();
-  const { ready: authReady, user, configured } = useAuth();
+  const { ready: authReady, user, guest, configured } = useAuth();
   const { ready: notesReady } = useNotes();
 
   if (!authReady || !notesReady) {
@@ -22,7 +22,7 @@ function RootNav() {
     );
   }
 
-  if (configured && !user && pathname !== '/welcome') {
+  if (configured && !user && !guest && pathname !== '/welcome') {
     return <Redirect href="/welcome" />;
   }
 
