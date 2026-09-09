@@ -127,7 +127,19 @@ Or watch it here: https://expo.dev/accounts/akshai78/projects/code-red/builds
 npm run build:apk:local
 ```
 
-Output: `releases/CodeRed-1.2.3.apk`
+Output: `releases/CodeRed-1.2.3.apk` (release APK, phone CPUs only — not the old 219MB debug file).
+
+### Why the APK was 219MB
+
+That file was a **debug** build (`assembleDebug`). Debug APKs are for developers, not a notes app you install:
+
+- They embed the React Native / Hermes engine **four times** (32-bit ARM, 64-bit ARM, and two Intel emulator chips).
+- They skip R8 minify and resource shrinking, so unused Java and assets stay in the file.
+- They keep debug symbols.
+
+Your notes are a few kilobytes. Almost all of the weight is the Expo/React Native runtime, not the feature set.
+
+A **release** APK (EAS preview, or `npm run build:apk:local` now) ships one copy of the engine for phone chips only and strips unused code. Expect roughly **25–50MB**. That is still larger than a tiny Kotlin notes app because Expo always includes JavaScript, Hermes, and native UI libraries. It will not shrink to a few megabytes without leaving Expo.
 
 For Google Play later, use `npm run build:android:store` (AAB format).
 
