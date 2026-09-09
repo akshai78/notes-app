@@ -16,6 +16,22 @@ function authErrorMessage(message?: string | null): string | null {
   return message;
 }
 
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timeout')), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      }
+    );
+  });
+}
+
 type AuthContextValue = {
   configured: boolean;
   ready: boolean;
@@ -40,27 +56,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
+    const finish = (nextGuest: boolean, nextSession: Session | null) => {
+      if (!mounted) return;
+      setGuest(nextGuest);
+      setSession(nextSession);
+      setReady(true);
+    };
+
     const boot = async () => {
-      const wasGuest = await loadGuest();
+      let wasGuest = false;
+      try {
+        wasGuest = await loadGuest();
+      } catch {
+        wasGuest = false;
+      }
+
       if (!supabase) {
-        if (!mounted) return;
-        setGuest(wasGuest);
-        setReady(true);
+        finish(wasGuest, null);
         return;
       }
 
-      const { data } = await supabase.auth.getSession();
-      if (!mounted) return;
-      setSession(data.session);
-      setGuest(wasGuest && !data.session);
-      setReady(true);
+      try {
+        const { data } = await withTimeout(supabase.auth.getSession(), 4000);
+        finish(wasGuest && !data.session, data.session);
+      } catch {
+        finish(wasGuest, null);
+      }
     };
 
     void boot();
 
-    if (!supabase) return () => {
-      mounted = false;
-    };
+    if (!supabase) {
+      return () => {
+        mounted = false;
+      };
+    }
 
     const { data } = supabase.auth.onAuthStateChange((_event, next) => {
       setSession(next);

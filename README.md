@@ -74,9 +74,9 @@ Use **[EAS Build](https://docs.expo.dev/build/introduction/)** (Expo’s cloud b
 
 When a newer GitHub Release exists, the installed app shows **Update available**. The user taps **Download update**, installs the APK, and keeps their notes. **You → Check for update** does the same check on demand. A `git push` alone does not update the phone until you publish a new release APK.
 
-### Android — installable APK (Code Red 1.2.1)
+### Android — installable APK (Code Red 1.2.2)
 
-**Download:** [CodeRed-1.2.1.apk](https://github.com/akshai78/notes-app/releases/latest/download/CodeRed-1.2.1.apk) from GitHub Releases.
+**Download:** [CodeRed-1.2.2.apk](https://github.com/akshai78/notes-app/releases/latest/download/CodeRed-1.2.2.apk) from GitHub Releases.
 
 On your phone:
 
@@ -101,7 +101,7 @@ EAS prints a download link when the build finishes (~10 minutes).
 npm run build:apk:local
 ```
 
-Output: `releases/CodeRed-1.2.1.apk`
+Output: `releases/CodeRed-1.2.2.apk`
 
 For Google Play later, use `npm run build:android:store` (AAB format).
 

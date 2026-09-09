@@ -83,19 +83,27 @@ export function NotesProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    loadState().then((stored) => {
-      if (!mounted) return;
-      const data = stored ?? seedState;
-      setNotes(
-        data.notes.map((note) => ({
-          ...note,
-          datedAt: startOfDay(new Date(note.datedAt ?? note.createdAt ?? note.updatedAt)),
-        }))
-      );
-      setFolders(data.folders);
-      setProfile(data.profile);
-      setReady(true);
-    });
+    loadState()
+      .then((stored) => {
+        if (!mounted) return;
+        const data = stored ?? seedState;
+        setNotes(
+          data.notes.map((note) => ({
+            ...note,
+            datedAt: startOfDay(new Date(note.datedAt ?? note.createdAt ?? note.updatedAt)),
+          }))
+        );
+        setFolders(data.folders);
+        setProfile(data.profile);
+        setReady(true);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setNotes(seedState.notes);
+        setFolders(seedState.folders);
+        setProfile(seedState.profile);
+        setReady(true);
+      });
     return () => {
       mounted = false;
     };

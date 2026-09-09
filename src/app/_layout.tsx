@@ -1,7 +1,9 @@
 import '@/global.css';
 
 import { Redirect, Stack, usePathname } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
@@ -10,21 +12,25 @@ import { Colors } from '@/constants/theme';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { NotesProvider, useNotes } from '@/context/notes-context';
 
+void SplashScreen.preventAutoHideAsync().catch(() => undefined);
+
 function RootNav() {
   const pathname = usePathname();
   const { ready: authReady, user, guest, configured } = useAuth();
   const { ready: notesReady } = useNotes();
+  const booted = authReady && notesReady;
+  const needsWelcome = configured && !user && !guest && pathname !== '/welcome';
 
-  if (!authReady || !notesReady) {
+  useEffect(() => {
+    if (booted) void SplashScreen.hideAsync().catch(() => undefined);
+  }, [booted]);
+
+  if (!booted) {
     return (
       <View style={styles.boot}>
         <ActivityIndicator color={Colors.text} />
       </View>
     );
-  }
-
-  if (configured && !user && !guest && pathname !== '/welcome') {
-    return <Redirect href="/welcome" />;
   }
 
   return (
@@ -37,6 +43,7 @@ function RootNav() {
         <Stack.Screen name="note/[id]" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="folder/[id]" options={{ animation: 'slide_from_right' }} />
       </Stack>
+      {needsWelcome ? <Redirect href="/welcome" /> : null}
       <UpdateAvailable enabled={pathname !== '/welcome'} />
     </>
   );

@@ -16,14 +16,18 @@ export function isSupabaseConfigured(): boolean {
 function createExpoClient(): SupabaseClient | null {
   if (!isSupabaseConfigured()) return null;
 
-  return createClient(supabaseUrl, supabaseKey, {
-    auth: {
-      storage: AsyncStorage,
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: Platform.OS === 'web',
-    },
-  });
+  try {
+    return createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        storage: AsyncStorage,
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: Platform.OS === 'web',
+      },
+    });
+  } catch {
+    return null;
+  }
 }
 
 export const supabase = createExpoClient();
