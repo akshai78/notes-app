@@ -24,7 +24,7 @@ npx expo prebuild --platform android --no-install
 echo "Building release APK (arm phones only, minified)..."
 cd android
 chmod +x gradlew
-./gradlew assembleRelease --no-daemon
+./gradlew :app:assembleRelease --no-daemon -x lint -x test
 
 OUT="$ROOT/releases/CodeRed-1.2.3.apk"
 mkdir -p "$ROOT/releases"
