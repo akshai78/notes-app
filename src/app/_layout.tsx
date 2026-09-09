@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { UpdateAvailable } from '@/components/update-available';
 import { Colors } from '@/constants/theme';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { NotesProvider, useNotes } from '@/context/notes-context';
@@ -36,6 +37,7 @@ function RootNav() {
         <Stack.Screen name="note/[id]" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="folder/[id]" options={{ animation: 'slide_from_right' }} />
       </Stack>
+      <UpdateAvailable enabled={pathname !== '/welcome'} />
     </>
   );
 }

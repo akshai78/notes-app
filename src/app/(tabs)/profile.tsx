@@ -2,8 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { CheckUpdateRow } from '@/components/check-update-row';
 import { CloudAccount } from '@/components/cloud-account';
 import { PromptModal } from '@/components/prompt-modal';
+import { currentAppVersion } from '@/lib/app-update';
 import { Screen } from '@/components/screen';
 import { Colors, Fonts, Radius, Shadow } from '@/constants/theme';
 import { useNotes } from '@/context/notes-context';
@@ -89,6 +91,7 @@ export default function ProfileScreen() {
             <Text style={styles.rowBody}>Shown in the greeting on the home screen.</Text>
           </View>
         </Pressable>
+        <CheckUpdateRow />
         <Pressable onPress={resetDemo} style={styles.row}>
           <View style={[styles.rowIcon, { backgroundColor: Colors.dangerSoft }]}>
             <Ionicons name="refresh-outline" size={18} color={Colors.danger} />
@@ -103,7 +106,7 @@ export default function ProfileScreen() {
           Notes save on this device first. Guests can keep writing without an account. Sign out or leave guest mode
           from the card above to return to welcome.
         </Text>
-        <Text style={styles.version}>Code Red 1.2</Text>
+        <Text style={styles.version}>Code Red {currentAppVersion()}</Text>
       </ScrollView>
 
       <PromptModal

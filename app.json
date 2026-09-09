@@ -2,13 +2,13 @@
   "expo": {
     "name": "Code Red",
     "slug": "code-red",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "codered",
     "userInterfaceStyle": "light",
     "android": {
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "backgroundColor": "#EEEDFE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -22,7 +22,7 @@
       "icon": "./assets/expo.icon",
       "supportsTablet": true,
       "bundleIdentifier": "app.codered.notes",
-      "buildNumber": "3",
+      "buildNumber": "4",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
