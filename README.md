@@ -53,7 +53,7 @@ This is an Expo app, so the client uses `@supabase/supabase-js` with AsyncStorag
 
 1. Copy `.env.example` to `.env` (already set for this project).
 2. In the [Supabase SQL editor](https://supabase.com/dashboard/project/tdjderirryagsqjenosu/sql), run `supabase/schema.sql`.
-3. On **You**, create an account or sign in. Notes stay local until the sync engine is turned on; the session is already persisted.
+3. Launch the app. The first screen asks you to **Sign in** or **Create account**. After that you land on your notes. Sign out from **You** to return to welcome.
 
 ## Installable Android & iOS apps
 

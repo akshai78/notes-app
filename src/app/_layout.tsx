@@ -1,29 +1,36 @@
 import '@/global.css';
 
-import { Stack } from 'expo-router';
+import { Redirect, Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { Colors } from '@/constants/theme';
-import { AuthProvider } from '@/context/auth-context';
+import { AuthProvider, useAuth } from '@/context/auth-context';
 import { NotesProvider, useNotes } from '@/context/notes-context';
 
 function RootNav() {
-  const { ready } = useNotes();
+  const pathname = usePathname();
+  const { ready: authReady, user, configured } = useAuth();
+  const { ready: notesReady } = useNotes();
 
-  if (!ready) {
+  if (!authReady || !notesReady) {
     return (
       <View style={styles.boot}>
-        <ActivityIndicator color={Colors.primary} />
+        <ActivityIndicator color={Colors.text} />
       </View>
     );
+  }
+
+  if (configured && !user && pathname !== '/welcome') {
+    return <Redirect href="/welcome" />;
   }
 
   return (
     <>
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Colors.bg } }}>
+        <Stack.Screen name="welcome" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="compose" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="note/[id]" options={{ animation: 'slide_from_right' }} />

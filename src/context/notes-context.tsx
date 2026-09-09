@@ -11,6 +11,7 @@ import {
 
 import { seedState } from '@/constants/seed';
 import { PASTEL_ORDER } from '@/constants/theme';
+import { useAuth } from '@/context/auth-context';
 import { startOfDay } from '@/lib/dates';
 import { createId } from '@/lib/id';
 import { peekNoteDraft } from '@/lib/note-draft';
@@ -65,6 +66,7 @@ function isEmptyNote(note: Note): boolean {
 }
 
 export function NotesProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [ready, setReady] = useState(false);
   const [notes, setNotes] = useState<Note[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -328,12 +330,20 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     [notes]
   );
 
+  const accountProfile = useMemo(
+    () => ({
+      ...profile,
+      email: user?.email?.trim() || profile.email,
+    }),
+    [profile, user?.email]
+  );
+
   const value = useMemo(
     () => ({
       ready,
       notes,
       folders,
-      profile,
+      profile: accountProfile,
       activeNotes,
       archivedNotes,
       trashedNotes,
@@ -364,7 +374,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       ready,
       notes,
       folders,
-      profile,
+      accountProfile,
       activeNotes,
       archivedNotes,
       trashedNotes,

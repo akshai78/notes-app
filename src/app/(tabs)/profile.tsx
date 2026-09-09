@@ -100,8 +100,8 @@ export default function ProfileScreen() {
         </Pressable>
 
         <Text style={styles.about}>
-          Notes still save on this device first. Sign in under Cloud sync to attach this copy to your Supabase
-          account. Capture from the plus button or the jot bar — no extra screens required.
+          Notes save on this device first. Sign out here to return to the welcome screen. Capture from the plus
+          button or the jot bar.
         </Text>
         <Text style={styles.version}>Code Red 1.1</Text>
       </ScrollView>
