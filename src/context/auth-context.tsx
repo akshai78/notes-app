@@ -4,6 +4,18 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { loadGuest, saveGuest } from '@/lib/guest';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase/client';
 
+function authErrorMessage(message?: string | null): string | null {
+  if (!message) return null;
+  const lower = message.toLowerCase();
+  if (lower.includes('rate limit')) {
+    return 'Too many emails were sent just now. Wait about an hour, or continue as guest. In Supabase: Authentication → Providers → Email, you can turn off Confirm email while testing.';
+  }
+  if (lower.includes('already registered') || lower.includes('already been registered')) {
+    return 'That email already has an account. Sign in, or use Forgot password.';
+  }
+  return message;
+}
+
 type AuthContextValue = {
   configured: boolean;
   ready: boolean;
@@ -67,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback(async (email: string, password: string) => {
     if (!supabase) return 'Cloud sync is not configured.';
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return error.message;
+    if (error) return authErrorMessage(error.message);
     setGuest(false);
     await saveGuest(false);
     return null;
@@ -76,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = useCallback(async (email: string, password: string) => {
     if (!supabase) return 'Cloud sync is not configured.';
     const { data, error } = await supabase.auth.signUp({ email, password });
-    if (error) return error.message;
+    if (error) return authErrorMessage(error.message);
     if (!data.session) return 'Account created. Confirm the email from Supabase, then sign in.';
     setGuest(false);
     await saveGuest(false);
@@ -88,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: 'codered://welcome',
     });
-    return error?.message ?? null;
+    return authErrorMessage(error?.message);
   }, []);
 
   const continueAsGuest = useCallback(async () => {
@@ -106,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await saveGuest(false);
     if (!supabase) return null;
     const { error } = await supabase.auth.signOut();
-    return error?.message ?? null;
+    return authErrorMessage(error?.message);
   }, []);
 
   const value = useMemo<AuthContextValue>(
