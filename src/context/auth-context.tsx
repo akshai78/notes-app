@@ -1,50 +1,30 @@
-import type { Session, User } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useAuth as useClerkAuth, useSignIn, useSignUp, useUser } from '@clerk/expo';
 
-import * as Linking from 'expo-linking';
-
-import { authRedirectUrl, isAuthCallbackUrl, parseAuthCallback } from '@/lib/auth-redirect';
+import { isClerkConfigured } from '@/lib/env';
 import { loadGuest, saveGuest } from '@/lib/guest';
 import { allowApp, denyApp } from '@/lib/session-gate';
-import { isSupabaseConfigured, supabase } from '@/lib/supabase/client';
 
-function authErrorMessage(message?: string | null): string | null {
-  if (!message) return null;
-  const lower = message.toLowerCase();
-  if (lower.includes('rate limit')) {
-    return 'Too many emails were sent just now. Wait about an hour, or continue as guest. In Supabase: Authentication → Providers → Email, you can turn off Confirm email while testing.';
-  }
-  if (lower.includes('already registered') || lower.includes('already been registered')) {
-    return 'That email already has an account. Sign in, or use Forgot password.';
-  }
-  return message;
-}
+export type AuthUser = {
+  id: string;
+  email: string | null;
+};
 
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('timeout')), ms);
-    promise.then(
-      (value) => {
-        clearTimeout(timer);
-        resolve(value);
-      },
-      (error) => {
-        clearTimeout(timer);
-        reject(error);
-      }
-    );
-  });
-}
+export type AuthActionResult = {
+  error: string | null;
+  needsCode?: 'signup' | 'reset' | 'trust';
+};
 
 type AuthContextValue = {
   configured: boolean;
   ready: boolean;
-  session: Session | null;
-  user: User | null;
+  user: AuthUser | null;
   guest: boolean;
-  signIn: (email: string, password: string) => Promise<string | null>;
-  signUp: (email: string, password: string) => Promise<string | null>;
-  resetPassword: (email: string) => Promise<string | null>;
+  getToken: () => Promise<string | null>;
+  signIn: (email: string, password: string) => Promise<AuthActionResult>;
+  signUp: (email: string, password: string) => Promise<AuthActionResult>;
+  verifyCode: (code: string, newPassword?: string) => Promise<AuthActionResult>;
+  resetPassword: (email: string) => Promise<AuthActionResult>;
   continueAsGuest: () => Promise<void>;
   leaveGuest: () => Promise<void>;
   signOut: () => Promise<string | null>;
@@ -52,135 +32,248 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+function clerkMessage(error: unknown): string {
+  if (!error) return 'Something went wrong.';
+  if (typeof error === 'string') return error;
+  if (typeof error === 'object') {
+    const value = error as {
+      message?: string;
+      longMessage?: string;
+      errors?: { longMessage?: string; message?: string }[];
+    };
+    const first = value.errors?.[0];
+    const text = first?.longMessage || first?.message || value.longMessage || value.message;
+    if (text) {
+      const lower = text.toLowerCase();
+      if (lower.includes('already') && lower.includes('taken')) {
+        return 'That email already has an account. Sign in, or use Forgot password.';
+      }
+      if (lower.includes('rate')) {
+        return 'Too many emails were sent just now. Wait a bit, or continue as guest.';
+      }
+      return text;
+    }
+  }
+  return 'Something went wrong.';
+}
+
+async function activateSession(
+  finalize: (args?: { navigate?: () => Promise<void> }) => Promise<{ error: unknown | null }>
+): Promise<AuthActionResult> {
+  const { error } = await finalize({ navigate: async () => undefined });
+  if (error) return { error: clerkMessage(error) };
+  allowApp();
+  await saveGuest(false);
+  return { error: null };
+}
+
+function GuestAuthProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
-  const [session, setSession] = useState<Session | null>(null);
   const [guest, setGuest] = useState(false);
 
   useEffect(() => {
     let mounted = true;
-
-    const finish = (nextGuest: boolean, nextSession: Session | null) => {
-      if (!mounted) return;
-      if (nextGuest || nextSession) allowApp();
-      setGuest(nextGuest);
-      setSession(nextSession);
-      setReady(true);
-    };
-
-    const boot = async () => {
-      let wasGuest = false;
-      try {
-        wasGuest = await loadGuest();
-      } catch {
-        wasGuest = false;
-      }
-
-      if (!supabase) {
-        finish(wasGuest, null);
-        return;
-      }
-
-      try {
-        const { data } = await withTimeout(supabase.auth.getSession(), 4000);
-        finish(wasGuest && !data.session, data.session);
-      } catch {
-        finish(wasGuest, null);
-      }
-    };
-
-    void boot();
-
-    if (!supabase) {
-      return () => {
-        mounted = false;
-      };
-    }
-
-    const { data } = supabase.auth.onAuthStateChange((_event, next) => {
-      setSession(next);
-      if (next) {
-        allowApp();
-        setGuest(false);
-        void saveGuest(false);
-      }
-    });
-
+    loadGuest()
+      .then((wasGuest) => {
+        if (!mounted) return;
+        if (wasGuest) allowApp();
+        setGuest(wasGuest);
+        setReady(true);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setReady(true);
+      });
     return () => {
       mounted = false;
-      data.subscription.unsubscribe();
     };
   }, []);
+
+  const notConfigured = useCallback(
+    async (): Promise<AuthActionResult> => ({
+      error: 'Add EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY to enable accounts.',
+    }),
+    []
+  );
+
+  const continueAsGuest = useCallback(async () => {
+    allowApp();
+    setGuest(true);
+    await saveGuest(true);
+  }, []);
+
+  const leaveGuest = useCallback(async () => {
+    denyApp();
+    setGuest(false);
+    await saveGuest(false);
+  }, []);
+
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      configured: false,
+      ready,
+      user: null,
+      guest,
+      getToken: async () => null,
+      signIn: notConfigured,
+      signUp: notConfigured,
+      verifyCode: notConfigured,
+      resetPassword: notConfigured,
+      continueAsGuest,
+      leaveGuest,
+      signOut: async () => null,
+    }),
+    [ready, guest, notConfigured, continueAsGuest, leaveGuest]
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+function ClerkAuthProvider({ children }: { children: ReactNode }) {
+  const { isLoaded, isSignedIn, userId, getToken: clerkGetToken, signOut: clerkSignOut } = useClerkAuth();
+  const { user: clerkUser } = useUser();
+  const { signIn } = useSignIn();
+  const { signUp } = useSignUp();
+  const [guest, setGuest] = useState(false);
+  const [guestReady, setGuestReady] = useState(false);
+  const [pending, setPending] = useState<'signup' | 'reset' | 'trust' | null>(null);
 
   useEffect(() => {
-    if (!supabase) return;
-
-    const consumeUrl = async (url: string | null) => {
-      if (!isAuthCallbackUrl(url) || !url) return;
-      const { code, accessToken, refreshToken } = parseAuthCallback(url);
-      try {
-        if (code) {
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
-          if (error) return;
-          allowApp();
-          await saveGuest(false);
-          return;
-        }
-        if (accessToken && refreshToken) {
-          const { error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-          if (error) return;
-          allowApp();
-          await saveGuest(false);
-        }
-      } catch {
-        // Ignore malformed or expired email links.
-      }
+    let mounted = true;
+    loadGuest()
+      .then((wasGuest) => {
+        if (!mounted) return;
+        setGuest(wasGuest && !isSignedIn);
+        if (wasGuest && !isSignedIn) allowApp();
+        setGuestReady(true);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setGuestReady(true);
+      });
+    return () => {
+      mounted = false;
     };
+  }, [isSignedIn]);
 
-    void Linking.getInitialURL().then(consumeUrl);
-    const sub = Linking.addEventListener('url', ({ url }) => {
-      void consumeUrl(url);
-    });
-    return () => sub.remove();
-  }, []);
-
-  const signIn = useCallback(async (email: string, password: string) => {
-    if (!supabase) return 'Cloud sync is not configured.';
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return authErrorMessage(error.message);
+  useEffect(() => {
+    if (!isSignedIn) return;
     allowApp();
-    setGuest(false);
-    await saveGuest(false);
-    return null;
-  }, []);
+    void saveGuest(false);
+  }, [isSignedIn]);
 
-  const signUp = useCallback(async (email: string, password: string) => {
-    if (!supabase) return 'Cloud sync is not configured.';
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: authRedirectUrl() },
-    });
-    if (error) return authErrorMessage(error.message);
-    if (!data.session) {
-      return 'Account created. Open the confirmation email on this phone and tap the link — it should open Code Red, not a browser.';
+  const user = useMemo<AuthUser | null>(() => {
+    if (!isSignedIn || !userId) return null;
+    return {
+      id: userId,
+      email: clerkUser?.primaryEmailAddress?.emailAddress ?? clerkUser?.emailAddresses?.[0]?.emailAddress ?? null,
+    };
+  }, [isSignedIn, userId, clerkUser]);
+
+  const getToken = useCallback(async () => {
+    try {
+      return (await clerkGetToken()) ?? null;
+    } catch {
+      return null;
     }
-    allowApp();
-    setGuest(false);
-    await saveGuest(false);
-    return null;
-  }, []);
+  }, [clerkGetToken]);
 
-  const resetPassword = useCallback(async (email: string) => {
-    if (!supabase) return 'Cloud sync is not configured.';
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: authRedirectUrl(),
-    });
-    return authErrorMessage(error?.message);
-  }, []);
+  const signedIn = useCallback(async (): Promise<AuthActionResult> => {
+    setGuest(false);
+    setPending(null);
+    return activateSession((args) => signIn.finalize(args));
+  }, [signIn]);
+
+  const signInWithPassword = useCallback(
+    async (email: string, password: string): Promise<AuthActionResult> => {
+      try {
+        const { error } = await signIn.password({ emailAddress: email, password });
+        if (error) return { error: clerkMessage(error) };
+        if (signIn.status === 'complete') return signedIn();
+        if (signIn.status === 'needs_client_trust' || signIn.status === 'needs_second_factor') {
+          const sent = await signIn.mfa.sendEmailCode();
+          if (sent.error) return { error: clerkMessage(sent.error) };
+          setPending('trust');
+          return { error: null, needsCode: 'trust' };
+        }
+        return { error: 'Could not finish sign in. Check email and password settings in Clerk.' };
+      } catch (error) {
+        return { error: clerkMessage(error) };
+      }
+    },
+    [signIn, signedIn]
+  );
+
+  const signUpWithPassword = useCallback(
+    async (email: string, password: string): Promise<AuthActionResult> => {
+      try {
+        const { error } = await signUp.password({ emailAddress: email, password });
+        if (error) return { error: clerkMessage(error) };
+        if (signUp.status === 'complete') {
+          setGuest(false);
+          setPending(null);
+          return activateSession((args) => signUp.finalize(args));
+        }
+        const sent = await signUp.verifications.sendEmailCode();
+        if (sent.error) return { error: clerkMessage(sent.error) };
+        setPending('signup');
+        return { error: null, needsCode: 'signup' };
+      } catch (error) {
+        return { error: clerkMessage(error) };
+      }
+    },
+    [signUp]
+  );
+
+  const resetPassword = useCallback(
+    async (email: string): Promise<AuthActionResult> => {
+      try {
+        const created = await signIn.create({ identifier: email });
+        if (created.error) return { error: clerkMessage(created.error) };
+        const sent = await signIn.resetPasswordEmailCode.sendCode();
+        if (sent.error) return { error: clerkMessage(sent.error) };
+        setPending('reset');
+        return { error: null, needsCode: 'reset' };
+      } catch (error) {
+        return { error: clerkMessage(error) };
+      }
+    },
+    [signIn]
+  );
+
+  const verifyCode = useCallback(
+    async (code: string, newPassword?: string): Promise<AuthActionResult> => {
+      try {
+        if (pending === 'signup') {
+          const verified = await signUp.verifications.verifyEmailCode({ code });
+          if (verified.error) return { error: clerkMessage(verified.error) };
+          setGuest(false);
+          setPending(null);
+          return activateSession((args) => signUp.finalize(args));
+        }
+
+        if (pending === 'reset') {
+          const verified = await signIn.resetPasswordEmailCode.verifyCode({ code });
+          if (verified.error) return { error: clerkMessage(verified.error) };
+          if (!newPassword) return { error: 'Choose a new password with at least 6 characters.' };
+          const submitted = await signIn.resetPasswordEmailCode.submitPassword({ password: newPassword });
+          if (submitted.error) return { error: clerkMessage(submitted.error) };
+          return signedIn();
+        }
+
+        if (pending === 'trust') {
+          const verified = await signIn.mfa.verifyEmailCode({ code });
+          if (verified.error) return { error: clerkMessage(verified.error) };
+          return signedIn();
+        }
+
+        return { error: 'Enter the code from your email.' };
+      } catch (error) {
+        return { error: clerkMessage(error) };
+      }
+    },
+    [pending, signIn, signUp, signedIn]
+  );
 
   const continueAsGuest = useCallback(async () => {
     allowApp();
@@ -198,29 +291,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     denyApp();
     setGuest(false);
     await saveGuest(false);
-    if (!supabase) return null;
-    const { error } = await supabase.auth.signOut();
-    return authErrorMessage(error?.message);
-  }, []);
+    try {
+      await clerkSignOut();
+      return null;
+    } catch (error) {
+      return clerkMessage(error);
+    }
+  }, [clerkSignOut]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      configured: isSupabaseConfigured(),
-      ready,
-      session,
-      user: session?.user ?? null,
-      guest,
-      signIn,
-      signUp,
+      configured: true,
+      ready: Boolean(isLoaded && guestReady),
+      user,
+      guest: guest && !user,
+      getToken,
+      signIn: signInWithPassword,
+      signUp: signUpWithPassword,
+      verifyCode,
       resetPassword,
       continueAsGuest,
       leaveGuest,
       signOut,
     }),
-    [ready, session, guest, signIn, signUp, resetPassword, continueAsGuest, leaveGuest, signOut]
+    [
+      isLoaded,
+      guestReady,
+      user,
+      guest,
+      getToken,
+      signInWithPassword,
+      signUpWithPassword,
+      verifyCode,
+      resetPassword,
+      continueAsGuest,
+      leaveGuest,
+      signOut,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  if (!isClerkConfigured()) return <GuestAuthProvider>{children}</GuestAuthProvider>;
+  return <ClerkAuthProvider>{children}</ClerkAuthProvider>;
 }
 
 export function useAuth() {

@@ -103,8 +103,8 @@ export default function ProfileScreen() {
         </Pressable>
 
         <Text style={styles.about}>
-          Notes save on this device first. Guests can keep writing without an account. Sign out or leave guest mode
-          from the card above to return to welcome.
+          Notes save on this device first. Sign in with Clerk to sync them to Neon. Guests can keep writing without an
+          account. Sign out or leave guest mode from the card above to return to welcome.
         </Text>
         <Text style={styles.version}>Code Red {currentAppVersion()}</Text>
       </ScrollView>

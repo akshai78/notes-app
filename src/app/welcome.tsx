@@ -18,14 +18,16 @@ import { Logo } from '@/components/logo';
 import { Colors, Fonts, Radius, Spacing, Typography } from '@/constants/theme';
 import { useAuth } from '@/context/auth-context';
 
-type Mode = 'choose' | 'signin' | 'signup' | 'reset';
+type Mode = 'choose' | 'signin' | 'signup' | 'reset' | 'verify';
 
 export default function WelcomeScreen() {
   const insets = useSafeAreaInsets();
-  const { configured, ready, user, guest, signIn, signUp, resetPassword, continueAsGuest } = useAuth();
+  const { configured, ready, user, guest, signIn, signUp, resetPassword, verifyCode, continueAsGuest } = useAuth();
   const [mode, setMode] = useState<Mode>('choose');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [code, setCode] = useState('');
+  const [verifyKind, setVerifyKind] = useState<'signup' | 'reset' | 'trust'>('signup');
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -49,8 +51,42 @@ export default function WelcomeScreen() {
     router.replace('/');
   };
 
+  const applyResult = (result: { error: string | null; needsCode?: 'signup' | 'reset' | 'trust' }) => {
+    if (result.error) {
+      setMessage(result.error);
+      return;
+    }
+    if (result.needsCode) {
+      setVerifyKind(result.needsCode);
+      setMode('verify');
+      setCode('');
+      setInfo(
+        result.needsCode === 'reset'
+          ? 'Enter the email code and a new password.'
+          : 'Enter the 6-digit code from that inbox.'
+      );
+    }
+  };
+
   const submit = async () => {
     const nextEmail = email.trim();
+    if (mode === 'verify') {
+      if (!code.trim()) {
+        setMessage('Enter the code from your email.');
+        return;
+      }
+      if (verifyKind === 'reset' && password.length < 6) {
+        setMessage('Choose a new password with at least 6 characters.');
+        return;
+      }
+      setBusy(true);
+      setMessage(null);
+      const result = await verifyCode(code.trim(), verifyKind === 'reset' ? password : undefined);
+      setBusy(false);
+      applyResult(result);
+      return;
+    }
+
     if (mode === 'reset') {
       if (!nextEmail) {
         setMessage('Enter the email on your account.');
@@ -59,13 +95,9 @@ export default function WelcomeScreen() {
       setBusy(true);
       setMessage(null);
       setInfo(null);
-      const error = await resetPassword(nextEmail);
+      const result = await resetPassword(nextEmail);
       setBusy(false);
-      if (error) {
-        setMessage(error);
-        return;
-      }
-      setInfo('Check that inbox for a reset link, then sign in with the new password.');
+      applyResult(result);
       return;
     }
 
@@ -76,27 +108,31 @@ export default function WelcomeScreen() {
     setBusy(true);
     setMessage(null);
     setInfo(null);
-    const error = mode === 'signup' ? await signUp(nextEmail, password) : await signIn(nextEmail, password);
+    const result = mode === 'signup' ? await signUp(nextEmail, password) : await signIn(nextEmail, password);
     setBusy(false);
-    if (error) {
-      if (error.startsWith('Account created')) {
-        setInfo(error);
-        return;
-      }
-      setMessage(error);
-    }
+    applyResult(result);
   };
 
   const title =
-    mode === 'signup' ? 'Create account' : mode === 'signin' ? 'Sign in' : mode === 'reset' ? 'Reset password' : 'Welcome';
+    mode === 'signup'
+      ? 'Create account'
+      : mode === 'signin'
+        ? 'Sign in'
+        : mode === 'reset'
+          ? 'Reset password'
+          : mode === 'verify'
+            ? 'Check your email'
+            : 'Welcome';
   const subtitle =
     mode === 'choose'
       ? 'Sign in, create an account, or continue as a guest.'
       : mode === 'signup'
-        ? 'A new Code Red account on this device.'
+        ? 'A new Code Red account. Notes still save on this device first.'
         : mode === 'reset'
-          ? 'We will email a link to set a new password.'
-          : 'Welcome back. Your notes stay on this device first.';
+          ? 'We will email a code so you can set a new password.'
+          : mode === 'verify'
+            ? 'Clerk sent a code to your email.'
+            : 'Welcome back. Your notes stay on this device first.';
 
   return (
     <KeyboardAvoidingView
@@ -115,7 +151,7 @@ export default function WelcomeScreen() {
 
         {!configured ? (
           <View style={styles.choices}>
-            <Text style={styles.message}>Cloud accounts are not configured. You can still continue as a guest.</Text>
+            <Text style={styles.message}>Cloud accounts are not configured. Add EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY. You can still continue as a guest.</Text>
             <Pressable
               disabled={busy}
               onPress={goGuest}
@@ -152,22 +188,35 @@ export default function WelcomeScreen() {
           </View>
         ) : (
           <View style={styles.form}>
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Email"
-              placeholderTextColor={Colors.textMuted}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="email-address"
-              style={styles.input}
-            />
-            {mode !== 'reset' ? (
+            {mode !== 'verify' ? (
+              <TextInput
+                value={email}
+                onChangeText={setEmail}
+                placeholder="Email"
+                placeholderTextColor={Colors.textMuted}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+                style={styles.input}
+              />
+            ) : (
+              <TextInput
+                value={code}
+                onChangeText={setCode}
+                placeholder="Email code"
+                placeholderTextColor={Colors.textMuted}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="number-pad"
+                style={styles.input}
+              />
+            )}
+            {mode === 'signin' || mode === 'signup' || (mode === 'verify' && verifyKind === 'reset') ? (
               <View style={styles.passwordWrap}>
                 <TextInput
                   value={password}
                   onChangeText={setPassword}
-                  placeholder="Password (6+ characters)"
+                  placeholder={mode === 'verify' ? 'New password (6+ characters)' : 'Password (6+ characters)'}
                   placeholderTextColor={Colors.textMuted}
                   secureTextEntry={!showPassword}
                   style={styles.passwordInput}
@@ -206,11 +255,13 @@ export default function WelcomeScreen() {
                   : mode === 'signup'
                     ? 'Create account'
                     : mode === 'reset'
-                      ? 'Send reset link'
-                      : 'Sign in'}
+                      ? 'Send reset code'
+                      : mode === 'verify'
+                        ? 'Verify'
+                        : 'Sign in'}
               </Text>
             </Pressable>
-            {mode !== 'reset' ? (
+            {mode !== 'reset' && mode !== 'verify' ? (
               <Pressable
                 disabled={busy}
                 onPress={goGuest}
@@ -218,7 +269,7 @@ export default function WelcomeScreen() {
                 <Text style={styles.guestLabel}>Continue as guest</Text>
               </Pressable>
             ) : null}
-            {mode !== 'reset' ? (
+            {mode === 'signin' || mode === 'signup' ? (
               <Pressable
                 disabled={busy}
                 onPress={() => {

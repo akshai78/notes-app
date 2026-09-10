@@ -17,6 +17,7 @@ export type Note = {
   pinned: boolean;
   archived: boolean;
   deletedAt: number | null;
+  purgedAt: number | null;
   datedAt: number;
   createdAt: number;
   updatedAt: number;
@@ -27,11 +28,14 @@ export type Folder = {
   name: string;
   color: NoteColorId;
   createdAt: number;
+  updatedAt: number;
+  deletedAt: number | null;
 };
 
 export type Profile = {
   name: string;
   email: string;
+  updatedAt: number;
 };
 
 export type DateFilter = 'today' | 'week' | 'month' | 'all';

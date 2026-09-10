@@ -8,15 +8,26 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { AppState as RnAppState } from 'react-native';
 
 import { seedState } from '@/constants/seed';
 import { PASTEL_ORDER } from '@/constants/theme';
 import { useAuth } from '@/context/auth-context';
+import { fromSnapshot, syncSnapshot, toSnapshot } from '@/lib/cloud-sync';
 import { startOfDay } from '@/lib/dates';
+import { apiBaseUrl } from '@/lib/env';
 import { createId } from '@/lib/id';
 import { peekNoteDraft } from '@/lib/note-draft';
 import { loadState, saveState } from '@/lib/storage';
 import type { CheckItem, Folder, Note, NoteColorId, Profile } from '@/lib/types';
+
+export type CloudSyncState = 'idle' | 'syncing' | 'synced' | 'offline' | 'error';
+
+export type CloudSyncStatus = {
+  state: CloudSyncState;
+  at: number | null;
+  message: string | null;
+};
 
 type NotesContextValue = {
   ready: boolean;
@@ -48,6 +59,8 @@ type NotesContextValue = {
   resetDemo: () => void;
   selectedCalendarDay: number | null;
   setActiveCalendarDay: (day: number | null) => void;
+  syncNow: () => Promise<void>;
+  syncStatus: CloudSyncStatus;
 };
 
 const NotesContext = createContext<NotesContextValue | null>(null);
@@ -66,14 +79,19 @@ function isEmptyNote(note: Note): boolean {
 }
 
 export function NotesProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, getToken } = useAuth();
   const [ready, setReady] = useState(false);
   const [notes, setNotes] = useState<Note[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [profile, setProfile] = useState<Profile>(seedState.profile);
   const persistTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const calendarDayRef = useRef<number | null>(null);
+  const applyingRemote = useRef(false);
+  const lastSynced = useRef('');
+  const snapshotRef = useRef({ notes: [] as Note[], folders: [] as Folder[], profile: seedState.profile });
   const [selectedCalendarDay, setSelectedCalendarDay] = useState<number | null>(() => startOfDay());
+  const [syncStatus, setSyncStatus] = useState<CloudSyncStatus>({ state: 'idle', at: null, message: null });
 
   const setActiveCalendarDay = useCallback((day: number | null) => {
     const next = day == null ? null : startOfDay(new Date(day));
@@ -82,8 +100,12 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    snapshotRef.current = { notes, folders, profile };
+  }, [notes, folders, profile]);
+
+  useEffect(() => {
     let mounted = true;
-    loadState()
+    loadState(user?.id)
       .then((stored) => {
         if (!mounted) return;
         const data = stored ?? seedState;
@@ -107,18 +129,77 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || applyingRemote.current) return;
     if (persistTimer.current) clearTimeout(persistTimer.current);
     persistTimer.current = setTimeout(() => {
-      saveState({ notes, folders, profile });
+      saveState({ notes, folders, profile }, user?.id);
     }, 220);
     return () => {
       if (persistTimer.current) clearTimeout(persistTimer.current);
     };
-  }, [notes, folders, profile, ready]);
+  }, [notes, folders, profile, ready, user?.id]);
+
+  const runSync = useCallback(async () => {
+    if (!user || !apiBaseUrl()) {
+      if (user && !apiBaseUrl()) {
+        setSyncStatus({
+          state: 'error',
+          at: Date.now(),
+          message: 'Set EXPO_PUBLIC_API_URL to your Vercel app URL.',
+        });
+      }
+      return;
+    }
+    const token = await getToken();
+    if (!token) return;
+    setSyncStatus({ state: 'syncing', at: Date.now(), message: null });
+    try {
+      const merged = await syncSnapshot(token, toSnapshot(snapshotRef.current));
+      const next = fromSnapshot(merged);
+      applyingRemote.current = true;
+      setNotes(next.notes);
+      setFolders(next.folders);
+      setProfile(next.profile);
+      await saveState(next, user.id);
+      lastSynced.current = JSON.stringify(toSnapshot(next));
+      setSyncStatus({ state: 'synced', at: Date.now(), message: null });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not reach the sync server.';
+      const offline = message.toLowerCase().includes('network') || message.toLowerCase().includes('failed to fetch');
+      setSyncStatus({
+        state: offline ? 'offline' : 'error',
+        at: Date.now(),
+        message,
+      });
+    } finally {
+      setTimeout(() => {
+        applyingRemote.current = false;
+      }, 400);
+    }
+  }, [getToken, user]);
+
+  useEffect(() => {
+    if (!ready || !user || applyingRemote.current) return;
+    if (syncTimer.current) clearTimeout(syncTimer.current);
+    const encoded = JSON.stringify(toSnapshot({ notes, folders, profile }));
+    if (encoded === lastSynced.current) return;
+    syncTimer.current = setTimeout(() => {
+      void runSync();
+    }, 1400);
+    return () => {
+      if (syncTimer.current) clearTimeout(syncTimer.current);
+    };
+  }, [notes, folders, profile, ready, user, runSync]);
+
+  useEffect(() => {
+    const sub = RnAppState.addEventListener('change', (status) => {
+      if (status === 'active') void runSync();
+    });
+    return () => sub.remove();
+  }, [runSync]);
 
   const createNote = useCallback(
     (input: Partial<Note> = {}) => {
@@ -133,6 +214,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
         pinned: false,
         archived: false,
         deletedAt: null,
+        purgedAt: null,
         datedAt: startOfDay(
           new Date(input.datedAt ?? peekNoteDraft()?.datedAt ?? calendarDayRef.current ?? Date.now())
         ),
@@ -188,7 +270,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   const trashNote = useCallback((id: string) => {
     setNotes((current) =>
       current.map((note) =>
-        note.id === id ? { ...note, deletedAt: Date.now(), archived: false } : note
+        note.id === id ? { ...note, deletedAt: Date.now(), archived: false, updatedAt: Date.now() } : note
       )
     );
   }, []);
@@ -196,17 +278,28 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   const restoreNote = useCallback((id: string) => {
     setNotes((current) =>
       current.map((note) =>
-        note.id === id ? { ...note, deletedAt: null, archived: false, updatedAt: Date.now() } : note
+        note.id === id
+          ? { ...note, deletedAt: null, purgedAt: null, archived: false, updatedAt: Date.now() }
+          : note
       )
     );
   }, []);
 
   const permanentlyDelete = useCallback((id: string) => {
-    setNotes((current) => current.filter((note) => note.id !== id));
+    setNotes((current) =>
+      current.map((note) =>
+        note.id === id ? { ...note, purgedAt: Date.now(), deletedAt: note.deletedAt ?? Date.now(), updatedAt: Date.now() } : note
+      )
+    );
   }, []);
 
   const emptyTrash = useCallback(() => {
-    setNotes((current) => current.filter((note) => !note.deletedAt));
+    const now = Date.now();
+    setNotes((current) =>
+      current.map((note) =>
+        note.deletedAt && !note.purgedAt ? { ...note, purgedAt: now, updatedAt: now } : note
+      )
+    );
   }, []);
 
   const togglePin = useCallback((id: string) => {
@@ -279,11 +372,14 @@ export function NotesProvider({ children }: { children: ReactNode }) {
 
   const createFolder = useCallback(
     (name: string, color?: NoteColorId) => {
+      const createdAt = Date.now();
       const folder: Folder = {
         id: createId(),
         name: name.trim() || 'Untitled folder',
         color: color ?? nextColor(folders.length + 2),
-        createdAt: Date.now(),
+        createdAt,
+        updatedAt: createdAt,
+        deletedAt: null,
       };
       setFolders((current) => [folder, ...current]);
       return folder;
@@ -293,25 +389,33 @@ export function NotesProvider({ children }: { children: ReactNode }) {
 
   const renameFolder = useCallback((id: string, name: string) => {
     setFolders((current) =>
-      current.map((folder) => (folder.id === id ? { ...folder, name: name.trim() } : folder))
+      current.map((folder) =>
+        folder.id === id ? { ...folder, name: name.trim(), updatedAt: Date.now() } : folder
+      )
     );
   }, []);
 
   const deleteFolder = useCallback((id: string) => {
-    setFolders((current) => current.filter((folder) => folder.id !== id));
+    const now = Date.now();
+    setFolders((current) =>
+      current.map((folder) => (folder.id === id ? { ...folder, deletedAt: now, updatedAt: now } : folder))
+    );
     setNotes((current) =>
-      current.map((note) => (note.folderId === id ? { ...note, folderId: null } : note))
+      current.map((note) => (note.folderId === id ? { ...note, folderId: null, updatedAt: now } : note))
     );
   }, []);
 
+  const visibleNotes = useMemo(() => notes.filter((note) => !note.purgedAt), [notes]);
+  const visibleFolders = useMemo(() => folders.filter((folder) => !folder.deletedAt), [folders]);
+
   const notesInFolder = useCallback(
     (folderId: string) =>
-      notes.filter((note) => note.folderId === folderId && !note.archived && !note.deletedAt),
-    [notes]
+      visibleNotes.filter((note) => note.folderId === folderId && !note.archived && !note.deletedAt),
+    [visibleNotes]
   );
 
   const updateProfile = useCallback((patch: Partial<Profile>) => {
-    setProfile((current) => ({ ...current, ...patch }));
+    setProfile((current) => ({ ...current, ...patch, updatedAt: Date.now() }));
   }, []);
 
   const resetDemo = useCallback(() => {
@@ -322,20 +426,26 @@ export function NotesProvider({ children }: { children: ReactNode }) {
 
   const activeNotes = useMemo(
     () =>
-      notes
+      visibleNotes
         .filter((note) => !note.archived && !note.deletedAt)
         .sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.updatedAt - a.updatedAt),
-    [notes]
+    [visibleNotes]
   );
 
   const archivedNotes = useMemo(
-    () => notes.filter((note) => note.archived && !note.deletedAt).sort((a, b) => b.updatedAt - a.updatedAt),
-    [notes]
+    () =>
+      visibleNotes
+        .filter((note) => note.archived && !note.deletedAt)
+        .sort((a, b) => b.updatedAt - a.updatedAt),
+    [visibleNotes]
   );
 
   const trashedNotes = useMemo(
-    () => notes.filter((note) => Boolean(note.deletedAt)).sort((a, b) => (b.deletedAt ?? 0) - (a.deletedAt ?? 0)),
-    [notes]
+    () =>
+      visibleNotes
+        .filter((note) => Boolean(note.deletedAt))
+        .sort((a, b) => (b.deletedAt ?? 0) - (a.deletedAt ?? 0)),
+    [visibleNotes]
   );
 
   const accountProfile = useMemo(
@@ -349,8 +459,8 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       ready,
-      notes,
-      folders,
+      notes: visibleNotes,
+      folders: visibleFolders,
       profile: accountProfile,
       activeNotes,
       archivedNotes,
@@ -377,11 +487,13 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       resetDemo,
       selectedCalendarDay,
       setActiveCalendarDay,
+      syncNow: runSync,
+      syncStatus,
     }),
     [
       ready,
-      notes,
-      folders,
+      visibleNotes,
+      visibleFolders,
       accountProfile,
       activeNotes,
       archivedNotes,
@@ -408,6 +520,8 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       resetDemo,
       selectedCalendarDay,
       setActiveCalendarDay,
+      runSync,
+      syncStatus,
     ]
   );
 

@@ -18,6 +18,7 @@ function note(partial: Partial<Note> & Pick<Note, 'title' | 'body' | 'color' | '
     pinned: false,
     archived: false,
     deletedAt: null,
+    purgedAt: null,
     tags: [],
     checklist: [],
     folderId: null,
@@ -27,10 +28,10 @@ function note(partial: Partial<Note> & Pick<Note, 'title' | 'body' | 'color' | '
 }
 
 const folders: Folder[] = [
-  { id: folderIds.movies, name: 'Movie Review', color: 'blue', createdAt: now - 6 * day },
-  { id: folderIds.university, name: 'University', color: 'pink', createdAt: now - 3 * day },
-  { id: folderIds.work, name: 'Work', color: 'lavender', createdAt: now - 10 * day },
-  { id: folderIds.personal, name: 'Personal', color: 'mint', createdAt: now - 20 * day },
+  { id: folderIds.movies, name: 'Movie Review', color: 'blue', createdAt: now - 6 * day, updatedAt: now - 6 * day, deletedAt: null },
+  { id: folderIds.university, name: 'University', color: 'pink', createdAt: now - 3 * day, updatedAt: now - 3 * day, deletedAt: null },
+  { id: folderIds.work, name: 'Work', color: 'lavender', createdAt: now - 10 * day, updatedAt: now - 10 * day, deletedAt: null },
+  { id: folderIds.personal, name: 'Personal', color: 'mint', createdAt: now - 20 * day, updatedAt: now - 20 * day, deletedAt: null },
 ];
 
 const notes: Note[] = [
@@ -119,5 +120,6 @@ export const seedState: AppState = {
   profile: {
     name: 'Akshai',
     email: 'akshai@notes.app',
+    updatedAt: now,
   },
 };

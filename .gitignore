@@ -44,3 +44,9 @@ releases/*.apk
 # generated native folders
 /ios
 /android
+
+# Next.js
+.next/
+server/.next
+server/node_modules
+server/.env.local

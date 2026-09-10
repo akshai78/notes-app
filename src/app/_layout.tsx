@@ -1,9 +1,11 @@
 import '@/global.css';
 
+import { ClerkProvider } from '@clerk/expo';
+import { tokenCache } from '@clerk/expo/token-cache';
 import { Stack, usePathname, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
@@ -11,6 +13,7 @@ import { UpdateAvailable } from '@/components/update-available';
 import { Colors } from '@/constants/theme';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { NotesProvider, useNotes } from '@/context/notes-context';
+import { clerkPublishableKey } from '@/lib/env';
 import { isAppAllowed } from '@/lib/session-gate';
 
 void SplashScreen.preventAutoHideAsync().catch(() => undefined);
@@ -56,14 +59,31 @@ function RootNav() {
   );
 }
 
+function AppTree({ children }: { children: ReactNode }) {
+  return (
+    <AuthProvider>
+      <NotesProvider>{children}</NotesProvider>
+    </AuthProvider>
+  );
+}
+
 export default function RootLayout() {
+  const publishableKey = clerkPublishableKey();
+  const tree = (
+    <AppTree>
+      <RootNav />
+    </AppTree>
+  );
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <AuthProvider>
-        <NotesProvider>
-          <RootNav />
-        </NotesProvider>
-      </AuthProvider>
+      {publishableKey ? (
+        <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+          {tree}
+        </ClerkProvider>
+      ) : (
+        tree
+      )}
     </GestureHandlerRootView>
   );
 }

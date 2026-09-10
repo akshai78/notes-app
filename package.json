@@ -3,9 +3,9 @@
   "main": "expo-router/entry",
   "version": "1.2.3",
   "dependencies": {
+    "@clerk/expo": "^4.6.5",
     "@expo/vector-icons": "^15.0.2",
     "@react-native-async-storage/async-storage": "2.2.0",
-    "@supabase/supabase-js": "^2.116.0",
     "expo": "~57.0.21",
     "expo-build-properties": "~57.0.8",
     "expo-constants": "~57.0.17",
@@ -13,6 +13,7 @@
     "expo-haptics": "~57.0.2",
     "expo-linking": "~57.0.9",
     "expo-router": "~57.0.20",
+    "expo-secure-store": "~57.0.3",
     "expo-splash-screen": "~57.0.8",
     "expo-status-bar": "~57.0.1",
     "expo-system-ui": "~57.0.3",
@@ -50,7 +51,10 @@
     "build:all": "eas build --platform all --profile preview",
     "build:android:store": "eas build --platform android --profile production",
     "build:ios:store": "eas build --platform ios --profile production",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "server": "npm run dev --prefix server",
+    "server:build": "npm run build --prefix server",
+    "db:setup": "npm run db:setup --prefix server"
   },
   "private": true
 }

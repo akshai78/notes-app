@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-if [ ! -f node_modules/@supabase/supabase-js/package.json ]; then
-  echo "Installing dependencies (missing @supabase/supabase-js)…"
+if [ ! -f node_modules/@clerk/expo/package.json ]; then
+  echo "Installing dependencies (missing @clerk/expo)…"
   npm install
 fi

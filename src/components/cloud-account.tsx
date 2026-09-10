@@ -5,17 +5,21 @@ import { useState } from 'react';
 
 import { Colors, Fonts, Radius, Shadow } from '@/constants/theme';
 import { useAuth } from '@/context/auth-context';
+import { useNotes } from '@/context/notes-context';
+import { apiBaseUrl } from '@/lib/env';
 
 export function CloudAccount() {
   const { configured, ready, user, guest, signOut, leaveGuest } = useAuth();
+  const { syncStatus, syncNow } = useNotes();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const api = apiBaseUrl();
 
   if (!configured && !guest) {
     return (
       <View style={[styles.card, Shadow.card]}>
         <Text style={styles.title}>Cloud account</Text>
-        <Text style={styles.body}>Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY to enable accounts.</Text>
+        <Text style={styles.body}>Add EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY to enable Clerk accounts.</Text>
       </View>
     );
   }
@@ -37,7 +41,7 @@ export function CloudAccount() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.title}>Guest</Text>
-            <Text style={styles.body}>Notes stay on this device. Sign in anytime to attach an account.</Text>
+            <Text style={styles.body}>Notes stay on this device. Sign in anytime to sync with Clerk.</Text>
           </View>
         </View>
         <Pressable
@@ -57,30 +61,54 @@ export function CloudAccount() {
 
   if (!user) return null;
 
+  const syncLabel =
+    syncStatus.state === 'syncing'
+      ? 'Syncing…'
+      : syncStatus.state === 'synced'
+        ? 'Notes are synced'
+        : syncStatus.state === 'offline'
+          ? 'Offline — notes stay on this device'
+          : syncStatus.message || (api ? 'Waiting to sync' : 'Set EXPO_PUBLIC_API_URL to sync');
+
   return (
     <View style={[styles.card, Shadow.card]}>
       <View style={styles.row}>
         <View style={styles.icon}>
-          <Ionicons name="cloud-done-outline" size={18} color={Colors.text} />
+          <Ionicons
+            name={syncStatus.state === 'synced' ? 'cloud-done-outline' : 'cloud-outline'}
+            size={18}
+            color={Colors.text}
+          />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>Signed in</Text>
-          <Text style={styles.body}>{user.email}</Text>
+          <Text style={styles.body}>{user.email || 'Clerk account'}</Text>
+          <Text style={styles.sync}>{syncLabel}</Text>
         </View>
       </View>
       {message ? <Text style={styles.message}>{message}</Text> : null}
-      <Pressable
-        disabled={busy}
-        onPress={async () => {
-          setBusy(true);
-          setMessage(null);
-          const error = await signOut();
-          setBusy(false);
-          if (error) setMessage(error);
-        }}
-        style={({ pressed }) => [styles.button, pressed && { opacity: 0.85 }]}>
-        <Text style={styles.buttonLabel}>{busy ? 'Signing out…' : 'Sign out'}</Text>
-      </Pressable>
+      <View style={styles.actions}>
+        <Pressable
+          disabled={busy || syncStatus.state === 'syncing'}
+          onPress={() => {
+            void syncNow();
+          }}
+          style={({ pressed }) => [styles.button, pressed && { opacity: 0.85 }]}>
+          <Text style={styles.buttonLabel}>Sync now</Text>
+        </Pressable>
+        <Pressable
+          disabled={busy}
+          onPress={async () => {
+            setBusy(true);
+            setMessage(null);
+            const error = await signOut();
+            setBusy(false);
+            if (error) setMessage(error);
+          }}
+          style={({ pressed }) => [styles.button, pressed && { opacity: 0.85 }]}>
+          <Text style={styles.buttonLabel}>{busy ? 'Signing out…' : 'Sign out'}</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -120,10 +148,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
   },
+  sync: {
+    marginTop: 6,
+    color: Colors.textSoft,
+    fontSize: 12,
+    fontWeight: '600',
+  },
   message: {
     color: Colors.danger,
     fontSize: 13,
     lineHeight: 18,
+  },
+  actions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   button: {
     height: 42,

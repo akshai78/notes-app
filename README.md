@@ -20,7 +20,7 @@ The home screen is a pastel card board with folders, tags, and checklists. A jot
    npm start
    ```
 
-   After `git pull`, always run **`npm install`** once so new packages (like `@supabase/supabase-js`) are installed. The start scripts also auto-install if that package is missing.
+   After `git pull`, always run **`npm install`** once so new packages (like `@clerk/expo`) are installed. The start scripts also auto-install if that package is missing.
 
    That starts Code Red on port **47391** (not 8081 — 8081 is often another Expo app). The terminal must say `Starting project at .../notes-app` and `Web: http://localhost:47391`. Confirm the build on **You → Code Red 1.2**.
 3. Open the project in Expo Go:
@@ -47,33 +47,60 @@ npm run web
 
 Notes, folders, and profile live on the device (AsyncStorage). Use **Restore sample notes** on the profile screen to reset the starter set.
 
-## Cloud sync (Supabase)
+## Cloud sync (Clerk + Neon + Vercel)
 
-This is an Expo app, so the client uses `@supabase/supabase-js` with AsyncStorage sessions — not the Next.js cookie/middleware helpers.
+Notes still save on the device first (AsyncStorage). When you sign in with **Clerk**, the Expo app syncs folders, notes, and profile to **Neon Postgres** through the Next.js app in `server/`. Last write wins on `updated_at`. Guests stay local-only.
 
-1. Copy `.env.example` to `.env` (already set for this project).
-2. In the [Supabase SQL editor](https://supabase.com/dashboard/project/tdjderirryagsqjenosu/sql), run `supabase/schema.sql`.
-3. Launch the app. The first screen asks you to **Sign in**, **Create account**, or **Continue as guest**. Sign-in also has show/hide password and **Forgot password?** (email reset). Sign out from **You** to return to welcome.
+### 1. Clerk
 
-### Confirmation email opens localhost
+1. Create an application at [clerk.com](https://dashboard.clerk.com).
+2. Enable **Email** + **Password**. For verify-at-sign-up, use **email code**.
+3. Turn on **Native API** (Clerk Dashboard → Native applications).
+4. Add redirect `codered://welcome` (and `http://localhost:47391` for Expo web).
+5. Copy the publishable key into the Expo `.env` as `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`.
+6. Copy the secret key into `server/.env.local` as `CLERK_SECRET_KEY`.
 
-Supabase defaults **Site URL** to `http://localhost:3000`. If that is still set — or if `codered://welcome` is missing from **Redirect URLs** — the Confirm link opens a browser on localhost instead of Code Red.
+### 2. Neon
 
-Fix it in [Authentication → URL configuration](https://supabase.com/dashboard/project/tdjderirryagsqjenosu/auth/url-configuration):
+1. Create a Postgres database. Use the **pooled** connection string (`-pooler` in the host).
+2. Put it in `server/.env.local` as `DATABASE_URL`.
+3. Apply the schema:
 
-| Field | Value |
-|--------|--------|
-| **Site URL** | `codered://welcome` |
-| **Redirect URLs** | `codered://welcome` |
-| | `codered://**` |
-| | `exp://**` (Expo Go only) |
-| | `http://localhost:47391/**` (web / Expo only) |
+   ```bash
+   npm run db:setup
+   ```
 
-Save, then request a **new** confirmation or reset email. Old messages still point at localhost.
+   Or paste `server/schema.sql` into the Neon SQL editor.
 
-The email template must use `{{ .ConfirmationURL }}` (or `{{ .ConfirmationURL }}` / `{{ .TokenHash }}` links), not a hard-coded `{{ .SiteURL }}` localhost page.
+### 3. Next.js API on Vercel
 
-After you tap Confirm on the phone, Code Red should open and finish sign-in. If the app is not installed, Android/iOS cannot handle `codered://` and the link will fail — install the APK first.
+The hostable server lives in `server/`. In Vercel, create a project with **Root Directory** set to `server`.
+
+Env vars on Vercel:
+
+| Name | Value |
+|------|--------|
+| `DATABASE_URL` | Neon pooled URL |
+| `CLERK_SECRET_KEY` | Clerk secret |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key |
+
+```bash
+npm run server
+```
+
+Health check: `http://localhost:3000/api/health`
+
+Point the Expo app at it:
+
+```
+EXPO_PUBLIC_API_URL=http://localhost:3000
+```
+
+On a phone, localhost will not work — use your LAN IP or the Vercel URL (`https://your-app.vercel.app`).
+
+Copy `.env.example` to `.env` for Expo, and `server/.env.example` to `server/.env.local` for the API.
+
+Sign out from **You** to return to welcome. Signed-in users can tap **Sync now** on that screen.
 
 ## Installable Android & iOS apps
 
